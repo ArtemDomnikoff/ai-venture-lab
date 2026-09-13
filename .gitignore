@@ -9,6 +9,7 @@ __pycache__/
 
 # Environment
 .env
+.env.test
 
 # Node
 node_modules/
