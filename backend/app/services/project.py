@@ -9,16 +9,16 @@ from app.schemas.project import ProjectCreate
 
 class ProjectService:
     def __init__(self, session: AsyncSession):
+        self.session = session
         self.repository = ProjectRepository(session)
 
-    async def create_project(
-        self,
-        data: ProjectCreate,
-    ) -> Project:
-        return await self.repository.create(
+    async def create_project(self, data: ProjectCreate) -> Project:
+        project = await self.repository.create(
             name=data.name,
             idea=data.idea,
         )
+        await self.session.commit()
+        return project
 
     async def get_project(
         self,
@@ -29,15 +29,13 @@ class ProjectService:
     async def get_projects(self) -> list[Project]:
         return await self.repository.get_all()
 
-    async def delete_project(
-        self,
-        project_id: uuid.UUID,
-    ) -> bool:
+    async def delete_project(self, project_id: uuid.UUID) -> bool:
         project = await self.repository.get_by_id(project_id)
 
         if project is None:
             return False
 
         await self.repository.delete(project)
+        await self.session.commit()
 
         return True

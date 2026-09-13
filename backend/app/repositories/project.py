@@ -23,7 +23,7 @@ class ProjectRepository:
 
         self.session.add(project)
 
-        await self.session.commit()
+        await self.session.flush()
         await self.session.refresh(project)
 
         return project
@@ -54,4 +54,3 @@ class ProjectRepository:
         project: Project,
     ) -> None:
         await self.session.delete(project)
-        await self.session.commit()

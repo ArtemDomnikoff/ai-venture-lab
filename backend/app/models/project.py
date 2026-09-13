@@ -1,9 +1,15 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import DateTime, String, Text, func
+from typing import TYPE_CHECKING
+
+from app.domain.enums import ProjectStatus
+
+if TYPE_CHECKING:
+    from app.models.run import Run
+from sqlalchemy import DateTime, String, Text, func, Enum
 from sqlalchemy.dialects.postgresql import UUID
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 
@@ -27,10 +33,17 @@ class Project(Base):
         nullable=False,
     )
 
-    status: Mapped[str] = mapped_column(
-        String(50),
+    status: Mapped[ProjectStatus] = mapped_column(
+        Enum(
+            ProjectStatus,
+            name="project_status",
+            native_enum=True,
+            values_callable=lambda enum_cls: [
+                member.value for member in enum_cls
+            ],
+        ),
         nullable=False,
-        default="draft",
+        default=ProjectStatus.DRAFT,
     )
 
     created_at: Mapped[datetime] = mapped_column(
@@ -44,4 +57,9 @@ class Project(Base):
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
+    )
+
+    runs: Mapped[list["Run"]] = relationship(
+        back_populates="project",
+        cascade="all, delete-orphan",
     )

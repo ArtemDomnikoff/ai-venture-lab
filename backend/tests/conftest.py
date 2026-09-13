@@ -1,17 +1,36 @@
+import os
+import subprocess
+from pathlib import Path
+
+import psycopg
+import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
+from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
     async_sessionmaker,
     create_async_engine,
 )
 
-from app.db.base import Base
-from app.api.deps import get_session
-from app.main import app
+# Test environment must be configured before importing application settings.
+os.environ["APP_ENV"] = "test"
+os.environ["POSTGRES_HOST"] = "127.0.0.1"
+os.environ["POSTGRES_PORT"] = "15432"
+os.environ["POSTGRES_DB"] = "venture_lab_test"
+os.environ["POSTGRES_USER"] = "postgres"
+os.environ["POSTGRES_PASSWORD"] = "postgres"
 
+BACKEND_DIR = Path(__file__).resolve().parents[1]
 
-TEST_DATABASE_URL = (
+TEST_SYNC_DATABASE_URL = (
+    "postgresql://"
+    "postgres:postgres"
+    "@127.0.0.1:15432/"
+    "venture_lab_test"
+)
+
+TEST_ASYNC_DATABASE_URL = (
     "postgresql+asyncpg://"
     "postgres:postgres"
     "@127.0.0.1:15432/"
@@ -19,10 +38,31 @@ TEST_DATABASE_URL = (
 )
 
 
+def reset_test_database() -> None:
+    with psycopg.connect(TEST_SYNC_DATABASE_URL) as connection:
+        connection.execute("DROP SCHEMA public CASCADE")
+        connection.execute("CREATE SCHEMA public")
+        connection.commit()
+
+
+@pytest.fixture(scope="session", autouse=True)
+def migrated_database() -> None:
+    reset_test_database()
+
+    env = os.environ.copy()
+
+    subprocess.run(
+        ["uv", "run", "alembic", "upgrade", "head"],
+        cwd=BACKEND_DIR,
+        env=env,
+        check=True,
+    )
+
+
 @pytest_asyncio.fixture
 async def engine():
     engine = create_async_engine(
-        TEST_DATABASE_URL,
+        TEST_ASYNC_DATABASE_URL,
         echo=False,
     )
 
@@ -33,9 +73,6 @@ async def engine():
 
 @pytest_asyncio.fixture
 async def session(engine):
-    async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.create_all)
-
     session_factory = async_sessionmaker(
         bind=engine,
         class_=AsyncSession,
@@ -46,11 +83,19 @@ async def session(engine):
         yield session
 
     async with engine.begin() as connection:
-        await connection.run_sync(Base.metadata.drop_all)
+        await connection.execute(
+            text(
+                "TRUNCATE TABLE runs, projects "
+                "RESTART IDENTITY CASCADE"
+            )
+        )
 
 
 @pytest_asyncio.fixture
 async def client(session: AsyncSession):
+    from app.api.deps import get_session
+    from app.main import app
+
     async def override_get_session():
         yield session
 

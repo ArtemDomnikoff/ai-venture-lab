@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict, Field
+from app.domain.enums import ProjectStatus
 
 
 class ProjectCreate(BaseModel):
@@ -22,6 +23,6 @@ class ProjectResponse(BaseModel):
     id: uuid.UUID
     name: str
     idea: str
-    status: str
+    status: ProjectStatus
     created_at: datetime
     updated_at: datetime
