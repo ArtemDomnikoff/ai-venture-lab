@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from sqlalchemy import text
 from app.redis import redis_client
+from app.api.router import api_router
 
 from app.db.session import AsyncSessionLocal
 
@@ -9,6 +10,7 @@ app = FastAPI(
     version="0.1.0",
 )
 
+app.include_router(api_router)
 
 @app.get("/health")
 async def health() -> dict[str, str]:

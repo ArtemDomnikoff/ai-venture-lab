@@ -1,31 +1,44 @@
 from functools import lru_cache
+from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+
+BASE_DIR = Path(__file__).resolve().parents[3]
 
 
 class Settings(BaseSettings):
     app_name: str = "AI Venture Lab"
     app_env: str = "development"
 
-    postgres_host: str = "postgres"
+    postgres_host: str = "127.0.0.1"
     postgres_port: int = 5432
     postgres_db: str = "venture_lab"
-    postgres_user: str = "venture_lab"
-    postgres_password: str = "venture_lab"
+    postgres_user: str = "postgres"
+    postgres_password: str = "postgres"
 
-    redis_host: str = "redis"
+    redis_host: str = "127.0.0.1"
     redis_port: int = 6379
 
     model_config = SettingsConfigDict(
-        env_file=".env",
+        env_file=BASE_DIR / ".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
 
     @property
-    def database_url(self) -> str:
+    def async_database_url(self) -> str:
         return (
-            f"postgresql+asyncpg://"
+            "postgresql+asyncpg://"
+            f"{self.postgres_user}:{self.postgres_password}"
+            f"@{self.postgres_host}:{self.postgres_port}"
+            f"/{self.postgres_db}"
+        )
+
+    @property
+    def sync_database_url(self) -> str:
+        return (
+            "postgresql+psycopg://"
             f"{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}"
             f"/{self.postgres_db}"
@@ -33,7 +46,9 @@ class Settings(BaseSettings):
 
     @property
     def redis_url(self) -> str:
-        return f"redis://{self.redis_host}:{self.redis_port}"
+        return (
+            f"redis://{self.redis_host}:{self.redis_port}"
+        )
 
 
 @lru_cache
