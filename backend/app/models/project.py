@@ -4,10 +4,10 @@ from datetime import datetime
 from typing import TYPE_CHECKING
 
 from app.domain.enums import ProjectStatus
-
+from sqlalchemy import Enum as SQLEnum
 if TYPE_CHECKING:
     from app.models.run import Run
-from sqlalchemy import DateTime, String, Text, func, Enum
+from sqlalchemy import DateTime, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -34,7 +34,7 @@ class Project(Base):
     )
 
     status: Mapped[ProjectStatus] = mapped_column(
-        Enum(
+        SQLEnum(
             ProjectStatus,
             name="project_status",
             native_enum=True,

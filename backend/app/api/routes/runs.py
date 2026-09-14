@@ -4,8 +4,8 @@ import uuid
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from app.api.deps import get_session
+from app.api.deps import get_queue, get_session
+from app.queue.base import Queue
 from app.core.exceptions import ProjectNotFoundError
 from app.schemas.run import RunResponse
 from app.services.run import RunService
@@ -27,11 +27,16 @@ runs_router = APIRouter(
     response_model=RunResponse,
     status_code=status.HTTP_201_CREATED,
 )
+
 async def create_run(
     project_id: uuid.UUID,
     session: AsyncSession = Depends(get_session),
+    queue: Queue = Depends(get_queue),
 ) -> RunResponse:
-    service = RunService(session)
+    service = RunService(
+        session=session,
+        queue=queue,
+    )
 
     try:
         run = await service.create_run(project_id)

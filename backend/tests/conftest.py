@@ -1,10 +1,12 @@
 import os
 import subprocess
+import uuid
 from pathlib import Path
 
 import psycopg
 import pytest
 import pytest_asyncio
+from app.api.deps import get_queue, get_session
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
@@ -43,6 +45,20 @@ def reset_test_database() -> None:
         connection.execute("DROP SCHEMA public CASCADE")
         connection.execute("CREATE SCHEMA public")
         connection.commit()
+
+class FakeQueue:
+    def __init__(self) -> None:
+        self.enqueued_run_ids: list[uuid.UUID] = []
+
+    async def enqueue_run(
+        self,
+        run_id: uuid.UUID,
+    ) -> None:
+        self.enqueued_run_ids.append(run_id)
+
+@pytest.fixture
+def fake_queue() -> FakeQueue:
+    return FakeQueue()
 
 
 @pytest.fixture(scope="session", autouse=True)
@@ -92,7 +108,10 @@ async def session(engine):
 
 
 @pytest_asyncio.fixture
-async def client(session: AsyncSession):
+async def client(
+        session: AsyncSession,
+        fake_queue: FakeQueue,
+):
     from app.api.deps import get_session
     from app.main import app
 
@@ -100,7 +119,7 @@ async def client(session: AsyncSession):
         yield session
 
     app.dependency_overrides[get_session] = override_get_session
-
+    app.dependency_overrides[get_queue] = lambda: fake_queue
     transport = ASGITransport(app=app)
 
     async with AsyncClient(
@@ -110,3 +129,4 @@ async def client(session: AsyncSession):
         yield client
 
     app.dependency_overrides.clear()
+

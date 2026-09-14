@@ -5,6 +5,9 @@ import uuid
 import pytest
 from httpx import AsyncClient
 
+from tests.conftest import FakeQueue
+
+
 async def create_project(client: AsyncClient) -> dict:
     response = await client.post(
         "/api/v1/projects",
@@ -21,6 +24,7 @@ async def create_project(client: AsyncClient) -> dict:
 @pytest.mark.asyncio
 async def test_create_run(
     client: AsyncClient,
+    fake_queue:FakeQueue,
 ) -> None:
     project = await create_project(client)
 
@@ -39,6 +43,9 @@ async def test_create_run(
     assert run["finished_at"] is None
     assert run["result"] is None
     assert run["error"] is None
+    assert fake_queue.enqueued_run_ids == [
+        uuid.UUID(run["id"])
+    ]
 
 @pytest.mark.asyncio
 async def test_create_run_project_not_found(

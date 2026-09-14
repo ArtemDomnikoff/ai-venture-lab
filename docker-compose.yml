@@ -59,6 +59,36 @@ services:
       redis:
         condition: service_healthy
 
+  worker:
+    build:
+      context: ./backend
+    container_name: venture_lab_worker
+    restart: unless-stopped
+
+    env_file:
+      - .env
+
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+    command:
+      [
+        "uv",
+        "run",
+        "python",
+        "-m",
+        "app.worker.main",
+      ]
+
   frontend:
     build:
       context: ./frontend

@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from sqlalchemy import text
-from app.redis import redis_client
 from app.api.router import api_router
 
 from app.db.session import AsyncSessionLocal
@@ -24,11 +23,11 @@ async def health_db() -> dict[str, str]:
 
     return {"database": "ok"}
 
-@app.get("/health/redis")
-async def health_redis() -> dict[str, str]:
-    result = await redis_client.ping()
-
-    if not result:
-        return {"redis": "error"}
-
-    return {"redis": "ok"}
+# @app.get("/health/redis")
+# async def health_redis() -> dict[str, str]:
+#     result = await redis_client.ping()
+#
+#     if not result:
+#         return {"redis": "error"}
+#
+#     return {"redis": "ok"}

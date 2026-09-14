@@ -7,18 +7,26 @@ from app.models.run import Run
 from app.domain.enums import ProjectStatus
 from app.repositories.project import ProjectRepository
 from app.repositories.run import RunRepository
-
+from app.queue.base import Queue
 
 class RunService:
-    def __init__(self, session: AsyncSession):
+    def __init__(
+        self,
+        session: AsyncSession,
+        queue: Queue | None = None,
+    ):
         self.session = session
+        self.queue = queue
         self.project_repository = ProjectRepository(session)
         self.run_repository = RunRepository(session)
 
     async def create_run(
-        self,
-        project_id: uuid.UUID,
+            self,
+            project_id: uuid.UUID,
     ) -> Run:
+        if self.queue is None:
+            raise RuntimeError("Queue is required to create a run")
+
         project = await self.project_repository.get_by_id(project_id)
 
         if project is None:
@@ -31,6 +39,8 @@ class RunService:
         )
 
         await self.session.commit()
+
+        await self.queue.enqueue_run(run.id)
 
         return run
 
