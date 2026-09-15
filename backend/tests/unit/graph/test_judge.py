@@ -59,7 +59,9 @@ async def test_judge_uses_all_agent_results_and_skeptic() -> None:
         confidence=74,
     )
 
-    mock_generate = AsyncMock(return_value=expected)
+    mock_generate = AsyncMock(
+        return_value=expected,
+    )
 
     with patch(
         "app.graph.nodes.judge.generate_structured",
@@ -82,13 +84,13 @@ async def test_judge_uses_all_agent_results_and_skeptic() -> None:
     kwargs = mock_generate.await_args.kwargs
     prompt = kwargs["user_prompt"]
 
-    assert "=== RESEARCHER ===" in prompt
-    assert "=== CUSTOMER ===" in prompt
-    assert "=== COMPETITOR ===" in prompt
-    assert "=== TECH ===" in prompt
-    assert "=== BUSINESS ===" in prompt
-    assert "=== SKEPTIC ===" in prompt
+    assert "Market analysis:" in prompt
+    assert "Customer analysis:" in prompt
+    assert "Competition analysis:" in prompt
+    assert "Technical analysis:" in prompt
+    assert "Business analysis:" in prompt
+    assert "Skeptic review:" in prompt
 
-    assert '"evidence_quality": 70' in prompt
+    assert '"evidence_quality":70' in prompt
     assert "Pricing validation" in prompt
     assert "Customer willingness to pay" in prompt

@@ -1,86 +1,105 @@
 from __future__ import annotations
 
-from app.graph.evidence import build_search_context, validate_agent_evidence
+from app.graph.evidence import (
+    build_search_context,
+    validate_agent_evidence,
+)
 from app.graph.schemas import AgentFinding
 from app.graph.state import AnalysisState
 from app.llm.runner import generate_structured
+from app.observability import agent_trace
 from app.search.client import create_search_service
 
 
 SYSTEM_PROMPT = """
-You are the Researcher Agent in a multi-agent startup evaluation system.
+You are the Market Research Agent in an AI startup evaluation system.
 
-Your job is to independently research the market and problem space
-for the startup idea.
+Your job is to independently investigate the market opportunity behind
+the startup idea.
 
-Focus on:
-- market size and growth;
-- market trends;
-- problem prevalence;
-- industry dynamics;
-- relevant regulations or structural changes;
-- important signals that could affect the opportunity.
+Analyze:
+- market size and structure;
+- market growth;
+- important trends;
+- demand drivers;
+- adoption dynamics;
+- industry changes;
+- market risks.
 
-You must perform an independent analysis.
-Do not rely on or reference the outputs of other agents.
-
-Use the supplied external search results as evidence.
+Use only the supplied web research as factual evidence.
 
 Do not invent:
-- sources;
-- URLs;
-- publications;
 - statistics;
 - market sizes;
+- growth rates;
 - companies;
-- trends.
+- URLs;
+- citations.
 
-Evidence rules:
-- Only use evidence from the supplied search sources.
-- For every evidence item, source MUST be the exact URL from the search results.
-- Do not invent URLs, publications, companies, reports, or statistics.
-- If a claim is not supported by the retrieved sources, leave it unsupported
-  rather than inventing evidence.
-- Evidence confidence reflects how strongly the retrieved source supports
-  the claim.
+If evidence is insufficient, explicitly state the limitation.
 
 Return:
-- a concise summary;
-- important claims;
-- evidence supporting those claims;
-- overall confidence.
+- summary;
+- claims;
+- evidence;
+- risks;
+- opportunities;
+- confidence.
 """.strip()
 
 
-async def researcher_node(state: AnalysisState) -> dict:
+async def researcher_node(
+    state: AnalysisState,
+) -> dict:
+
     plan = state["plan"]
 
-    search_service = create_search_service()
+    with agent_trace(
+        agent_name="researcher",
+        run_id=str(
+            state.get("run_id", "")
+        ),
+        project_id=str(
+            state.get("project_id", "")
+        ),
+        idea=state["idea"],
+        input_data={
+            "question_count": len(
+                plan.market_questions
+            ),
+            "market_focus": plan.market_focus,
+        },
+    ) as observation:
 
-    query = (
-        f"{state['idea']} "
-        f"market size market growth trends industry problem validation "
-        f"{plan.market_focus}"
-    )
+        search_service = create_search_service()
 
-    search_results = await search_service.search(
-        query,
-        max_results=5,
-    )
+        query = (
+            f"{state['idea']} "
+            f"market size trends industry dynamics "
+            f"growth drivers startup opportunity "
+            f"{plan.market_focus}"
+        )
 
-    search_context = build_search_context(search_results)
+        search_results = await search_service.search(
+            query,
+            max_results=5,
+        )
 
-    questions = "\n".join(
-        f"- {question}"
-        for question in plan.market_questions
-    )
+        search_context = build_search_context(
+            search_results,
+        )
 
-    user_prompt = f"""
+        questions = "\n".join(
+            f"- {question}"
+            for question in plan.market_questions
+        )
+
+        user_prompt = f"""
 Startup idea:
 
 {state["idea"]}
 
-Research focus:
+Market focus:
 
 {plan.market_focus}
 
@@ -88,30 +107,45 @@ Research questions:
 
 {questions}
 
-External search results:
+External research:
 
 {search_context}
 
-Analyze the market and problem space using the retrieved sources.
+Analyze the market opportunity.
 
 Separate:
-- facts supported by evidence;
-- reasonable interpretation;
-- uncertainty.
+- evidence-backed claims;
+- assumptions;
+- opportunities;
+- risks;
+- evidence gaps.
 
-Do not invent unsupported statistics or sources.
+Use only the supplied research.
 """.strip()
 
-    result = await generate_structured(
-        system_prompt=SYSTEM_PROMPT,
-        user_prompt=user_prompt,
-        output_model=AgentFinding,
-    )
+        result = await generate_structured(
+            system_prompt=SYSTEM_PROMPT,
+            user_prompt=user_prompt,
+            output_model=AgentFinding,
+        )
 
-    result = validate_agent_evidence(
-        result,
-        search_results,
-    )
+        result = validate_agent_evidence(
+            result,
+            search_results,
+        )
+
+        if observation is not None:
+            observation.update(
+                output={
+                    "claim_count": len(
+                        result.claims
+                    ),
+                    "evidence_count": len(
+                        result.evidence
+                    ),
+                    "confidence": result.confidence,
+                }
+            )
 
     return {
         "researcher": result,

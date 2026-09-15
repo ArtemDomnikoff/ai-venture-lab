@@ -5,7 +5,11 @@ from unittest.mock import AsyncMock, patch
 import pytest
 
 from app.graph.nodes.skeptic import skeptic_node
-from app.graph.schemas import AgentFinding, Evidence, SkepticResult
+from app.graph.schemas import (
+    AgentFinding,
+    Evidence,
+    SkepticResult,
+)
 
 
 def make_finding(name: str) -> AgentFinding:
@@ -44,7 +48,9 @@ async def test_skeptic_reviews_all_five_agents() -> None:
         evidence_quality=72,
     )
 
-    mock_generate = AsyncMock(return_value=expected)
+    mock_generate = AsyncMock(
+        return_value=expected,
+    )
 
     with patch(
         "app.graph.nodes.skeptic.generate_structured",
@@ -66,11 +72,11 @@ async def test_skeptic_reviews_all_five_agents() -> None:
     kwargs = mock_generate.await_args.kwargs
     prompt = kwargs["user_prompt"]
 
-    assert "=== RESEARCHER ===" in prompt
-    assert "=== CUSTOMER ===" in prompt
-    assert "=== COMPETITOR ===" in prompt
-    assert "=== TECH ===" in prompt
-    assert "=== BUSINESS ===" in prompt
+    assert "Market analysis:" in prompt
+    assert "Customer analysis:" in prompt
+    assert "Competition analysis:" in prompt
+    assert "Technical analysis:" in prompt
+    assert "Business analysis:" in prompt
 
     assert "https://example.com/researcher" in prompt
     assert "https://example.com/customer" in prompt

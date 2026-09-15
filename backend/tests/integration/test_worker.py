@@ -135,7 +135,9 @@ async def test_process_run_completes_run() -> None:
     assert run.started_at is not None
     assert run.finished_at is not None
 
-    repository.get_by_id.assert_awaited_once_with(run_id)
+    repository.get_by_id.assert_awaited_once_with(
+        run_id,
+    )
 
     repository.update_status.assert_awaited_once_with(
         run,
@@ -143,6 +145,7 @@ async def test_process_run_completes_run() -> None:
     )
 
     analysis_fn.assert_awaited_once_with(
+        session,
         run_id,
         project_id,
         "AI venture evaluator",
@@ -172,7 +175,10 @@ async def test_process_run_ignores_missing_run() -> None:
             analysis_fn=analysis_fn,
         )
 
-    repository.get_by_id.assert_awaited_once_with(run_id)
+    repository.get_by_id.assert_awaited_once_with(
+        run_id,
+    )
+
     analysis_fn.assert_not_awaited()
     session.commit.assert_not_awaited()
 
@@ -186,6 +192,7 @@ async def test_process_run_ignores_non_queued_run() -> None:
         run_id=run_id,
         project_id=project_id,
     )
+
     run.status = RunStatus.RUNNING
 
     session = AsyncMock()
@@ -205,9 +212,14 @@ async def test_process_run_ignores_non_queued_run() -> None:
             analysis_fn=analysis_fn,
         )
 
-    repository.get_by_id.assert_awaited_once_with(run_id)
+    repository.get_by_id.assert_awaited_once_with(
+        run_id,
+    )
+
     analysis_fn.assert_not_awaited()
+
     repository.update_status.assert_not_awaited()
+
     session.commit.assert_not_awaited()
 
 
@@ -227,7 +239,9 @@ async def test_process_run_marks_run_failed_when_analysis_raises() -> None:
     repository.get_by_id.return_value = run
 
     analysis_fn = AsyncMock(
-        side_effect=RuntimeError("analysis failed"),
+        side_effect=RuntimeError(
+            "analysis failed",
+        ),
     )
 
     with patch(
@@ -250,6 +264,7 @@ async def test_process_run_marks_run_failed_when_analysis_raises() -> None:
     )
 
     analysis_fn.assert_awaited_once_with(
+        session,
         run_id,
         project_id,
         "AI venture evaluator",

@@ -26,3 +26,7 @@ class AnalysisState(TypedDict, total=False):
 
     skeptic: SkepticResult
     judge: JudgeResult
+
+    progress: dict[str, str]
+    current_node: str | None
+    errors: dict[str, str]

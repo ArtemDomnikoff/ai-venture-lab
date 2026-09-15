@@ -1,17 +1,19 @@
+from __future__ import annotations
+
 import uuid
-from datetime import UTC, datetime
+from datetime import datetime
 from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from app.models.project import Project
-
-from sqlalchemy import Enum as SQLEnum
 from sqlalchemy import DateTime, ForeignKey, String, func
+from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
 from app.domain.enums import RunStatus
+
+if TYPE_CHECKING:
+    from app.models.project import Project
 
 
 class Run(Base):
@@ -37,11 +39,23 @@ class Run(Base):
             name="run_status",
             native_enum=True,
             values_callable=lambda enum_cls: [
-                member.value for member in enum_cls
+                member.value
+                for member in enum_cls
             ],
         ),
         nullable=False,
         default=RunStatus.QUEUED,
+    )
+
+    progress: Mapped[dict[str, str]] = mapped_column(
+        JSONB,
+        nullable=False,
+        default=dict,
+    )
+
+    current_node: Mapped[str | None] = mapped_column(
+        String,
+        nullable=True,
     )
 
     started_at: Mapped[datetime | None] = mapped_column(

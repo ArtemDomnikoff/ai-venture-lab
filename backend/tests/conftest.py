@@ -40,6 +40,19 @@ TEST_ASYNC_DATABASE_URL = (
 )
 
 
+@pytest.fixture(autouse=True)
+def disable_langfuse_during_tests(monkeypatch: pytest.MonkeyPatch) -> None:
+    """
+    Prevent tests from sending traces to Langfuse.
+
+    Production and observability smoke tests are unaffected.
+    """
+
+    monkeypatch.setattr(
+        "app.observability.get_langfuse",
+        lambda: None,
+    )
+
 def reset_test_database() -> None:
     with psycopg.connect(TEST_SYNC_DATABASE_URL) as connection:
         connection.execute("DROP SCHEMA public CASCADE")

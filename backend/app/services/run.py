@@ -4,7 +4,6 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import ProjectNotFoundError
 from app.models.run import Run
-from app.domain.enums import ProjectStatus
 from app.repositories.project import ProjectRepository
 from app.repositories.run import RunRepository
 from app.queue.base import Queue

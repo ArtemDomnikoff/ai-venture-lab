@@ -16,6 +16,11 @@ class Settings(BaseSettings):
 
     tavily_api_key: str | None = None
 
+    langfuse_public_key: str | None = None
+    langfuse_secret_key: str | None = None
+    langfuse_base_url: str = "https://cloud.langfuse.com"
+    langfuse_tracing_environment: str = "development"
+    
     postgres_host: str = "127.0.0.1"
     postgres_port: int = 5432
     postgres_db: str = "venture_lab"

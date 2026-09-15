@@ -88,18 +88,114 @@ def make_fake_result() -> dict:
     }
 
 
+class FakeAsyncIterator:
+    def __init__(self, updates: list[dict]):
+        self.updates = updates
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        if not self.updates:
+            raise StopAsyncIteration
+
+        return self.updates.pop(0)
+
+
+def make_fake_run(
+    run_id: uuid.UUID,
+    project_id: uuid.UUID,
+):
+    return SimpleNamespace(
+        id=run_id,
+        project_id=project_id,
+        current_node=None,
+        progress={},
+    )
+
+
+def make_fake_updates() -> list[dict]:
+    result = make_fake_result()
+
+    return [
+        {
+            "planner": {
+                "plan": result["plan"],
+            },
+        },
+        {
+            "researcher": {
+                "researcher": result["researcher"],
+            },
+        },
+        {
+            "customer": {
+                "customer": result["customer"],
+            },
+        },
+        {
+            "competitor": {
+                "competitor": result["competitor"],
+            },
+        },
+        {
+            "tech": {
+                "tech": result["tech"],
+            },
+        },
+        {
+            "business": {
+                "business": result["business"],
+            },
+        },
+        {
+            "skeptic": {
+                "skeptic": result["skeptic"],
+            },
+        },
+        {
+            "judge": {
+                "judge": result["judge"],
+            },
+        },
+    ]
+
+
 @pytest.mark.asyncio
 async def test_run_analysis_returns_json_compatible_result() -> None:
-    fake_graph = AsyncMock()
-    fake_graph.ainvoke.return_value = make_fake_result()
+    run_id = uuid.uuid4()
+    project_id = uuid.uuid4()
 
-    with patch(
-        "app.worker.execution.build_graph",
-        return_value=fake_graph,
+    fake_session = AsyncMock()
+
+    fake_run = make_fake_run(
+        run_id,
+        project_id,
+    )
+
+    fake_repository = AsyncMock()
+    fake_repository.get_by_id.return_value = fake_run
+
+    fake_graph = SimpleNamespace(
+        astream=lambda *args, **kwargs: FakeAsyncIterator(
+            make_fake_updates()
+        )
+    )
+
+    with (
+        patch(
+            "app.worker.execution.build_graph",
+            return_value=fake_graph,
+        ),
+        patch(
+            "app.worker.execution.RunRepository",
+            return_value=fake_repository,
+        ),
     ):
         result = await run_analysis(
-            run_id=uuid.uuid4(),
-            project_id=uuid.uuid4(),
+            session=fake_session,
+            run_id=run_id,
+            project_id=project_id,
             idea="AI venture evaluator",
         )
 
@@ -128,27 +224,61 @@ async def test_run_analysis_returns_json_compatible_result() -> None:
 
 
 @pytest.mark.asyncio
-async def test_run_analysis_passes_correct_models_to_agents() -> None:
-    fake_graph = AsyncMock()
-    fake_graph.ainvoke.return_value = make_fake_result()
-
+async def test_run_analysis_passes_correct_state_to_graph() -> None:
     run_id = uuid.uuid4()
     project_id = uuid.uuid4()
 
-    with patch(
-        "app.worker.execution.build_graph",
-        return_value=fake_graph,
+    fake_session = AsyncMock()
+
+    fake_run = make_fake_run(
+        run_id,
+        project_id,
+    )
+
+    fake_repository = AsyncMock()
+    fake_repository.get_by_id.return_value = fake_run
+
+    captured_args = None
+    captured_kwargs = None
+
+    async def fake_astream(*args, **kwargs):
+        nonlocal captured_args
+        nonlocal captured_kwargs
+
+        captured_args = args
+        captured_kwargs = kwargs
+
+        for update in make_fake_updates():
+            yield update
+
+    fake_graph = SimpleNamespace(
+        astream=fake_astream,
+    )
+
+    with (
+        patch(
+            "app.worker.execution.build_graph",
+            return_value=fake_graph,
+        ),
+        patch(
+            "app.worker.execution.RunRepository",
+            return_value=fake_repository,
+        ),
     ):
         await run_analysis(
+            session=fake_session,
             run_id=run_id,
             project_id=project_id,
             idea="AI venture evaluator",
         )
 
-    fake_graph.ainvoke.assert_awaited_once()
+    assert captured_args is not None
+    assert captured_kwargs is not None
 
-    input_state = fake_graph.ainvoke.await_args.args[0]
+    input_state = captured_args[0]
 
     assert input_state["run_id"] == run_id
     assert input_state["project_id"] == project_id
     assert input_state["idea"] == "AI venture evaluator"
+
+    assert captured_kwargs["stream_mode"] == "updates"

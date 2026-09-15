@@ -1,76 +1,98 @@
 from __future__ import annotations
 
-from app.graph.evidence import build_search_context, validate_agent_evidence
+from app.graph.evidence import (
+    build_search_context,
+    validate_agent_evidence,
+)
 from app.graph.schemas import AgentFinding
 from app.graph.state import AnalysisState
 from app.llm.runner import generate_structured
+from app.observability import agent_trace
 from app.search.client import create_search_service
 
 
 SYSTEM_PROMPT = """
 You are the Competitor Agent in a multi-agent startup evaluation system.
 
-Your job is to independently analyze the competitive landscape
-for the startup idea.
+Your job is to analyze the competitive landscape.
 
 Focus on:
 - direct competitors;
 - indirect competitors;
-- substitute solutions;
-- competitor positioning;
-- pricing;
-- target customers;
-- strengths and weaknesses;
-- market saturation;
-- possible differentiation.
+- substitutes;
+- market positioning;
+- differentiation opportunities;
+- competitive risks.
 
-You must perform an independent analysis.
-Do not rely on the outputs of other agents.
+Perform an independent analysis.
 
-Use the supplied external search results as evidence.
+Use only supplied search evidence.
 
 Evidence rules:
-- Only use evidence from the supplied search sources.
-- For every evidence item, source MUST be the exact URL from the search results.
-- Do not invent URLs, publications, companies, reports, prices, or statistics.
-- If a claim is not supported by the retrieved sources, leave it unsupported
-  rather than inventing evidence.
-- Evidence confidence reflects how strongly the retrieved source supports
-  the claim.
+- Use only URLs returned by search.
+- Do not invent competitors, companies, reports, statistics, or market facts.
+- Separate evidence-backed observations from assumptions.
 
 Return:
-- a concise summary;
-- important claims;
-- evidence supporting those claims;
-- overall confidence.
+- summary;
+- claims;
+- evidence;
+- risks;
+- opportunities;
+- confidence.
 """.strip()
 
 
-async def competitor_node(state: AnalysisState) -> dict:
+async def competitor_node(
+    state: AnalysisState,
+) -> dict:
+
     plan = state["plan"]
 
-    search_service = create_search_service()
+    with agent_trace(
+        agent_name="competitor",
+        run_id=str(
+            state.get("run_id", "")
+        ),
+        project_id=str(
+            state.get("project_id", "")
+        ),
+        idea=state["idea"],
+        input_data={
+            "question_count": len(
+                plan.competition_questions
+            ),
+            "competition_focus": (
+                plan.competition_focus
+            ),
+        },
+    ) as observation:
 
-    query = (
-        f"{state['idea']} "
-        f"competitors alternatives substitutes pricing positioning "
-        f"competitive landscape differentiation "
-        f"{plan.competition_focus}"
-    )
+        search_service = create_search_service()
 
-    search_results = await search_service.search(
-        query,
-        max_results=5,
-    )
+        query = (
+            f"{state['idea']} "
+            f"competitors alternatives "
+            f"market landscape differentiation "
+            f"competitive risks "
+            f"{plan.competition_focus}"
+        )
 
-    search_context = build_search_context(search_results)
+        search_results = await search_service.search(
+            query,
+            max_results=5,
+        )
 
-    questions = "\n".join(
-        f"- {question}"
-        for question in plan.competition_questions
-    )
+        search_context = build_search_context(
+            search_results,
+        )
 
-    user_prompt = f"""
+        questions = "\n".join(
+            f"- {question}"
+            for question in plan.competition_questions
+        )
+
+        user_prompt = f"""
 Startup idea:
 
 {state["idea"]}
@@ -83,28 +105,45 @@ Research questions:
 
 {questions}
 
-External search results:
+External research:
 
 {search_context}
 
-Analyze the competitive landscape.
+Analyze the competitive environment.
 
-Identify direct and indirect alternatives and explain
-where differentiation may or may not exist.
+Identify:
+- direct competitors;
+- indirect competitors;
+- substitutes;
+- differentiation opportunities;
+- competitive risks.
 
-Do not invent competitors, pricing, market shares, or product capabilities.
+Separate evidence-backed findings from assumptions.
 """.strip()
 
-    result = await generate_structured(
-        system_prompt=SYSTEM_PROMPT,
-        user_prompt=user_prompt,
-        output_model=AgentFinding,
-    )
+        result = await generate_structured(
+            system_prompt=SYSTEM_PROMPT,
+            user_prompt=user_prompt,
+            output_model=AgentFinding,
+        )
 
-    result = validate_agent_evidence(
-        result,
-        search_results,
-    )
+        result = validate_agent_evidence(
+            result,
+            search_results,
+        )
+
+        if observation is not None:
+            observation.update(
+                output={
+                    "claim_count": len(
+                        result.claims
+                    ),
+                    "evidence_count": len(
+                        result.evidence
+                    ),
+                    "confidence": result.confidence,
+                }
+            )
 
     return {
         "competitor": result,
