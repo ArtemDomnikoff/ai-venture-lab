@@ -11,6 +11,11 @@ class Settings(BaseSettings):
     app_name: str = "AI Venture Lab"
     app_env: str = "development"
 
+    openai_api_key: str | None = None
+    openai_model: str = "gpt-4o-mini"
+
+    tavily_api_key: str | None = None
+
     postgres_host: str = "127.0.0.1"
     postgres_port: int = 5432
     postgres_db: str = "venture_lab"

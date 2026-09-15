@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import json
 import uuid
+import logging
 
 from redis.asyncio import Redis
 
+logger = logging.getLogger(__name__)
 
 class RedisQueue:
     def __init__(
@@ -30,14 +32,15 @@ class RedisQueue:
         )
 
     async def dequeue_run(self) -> dict | None:
-        item = await self.redis.blpop(
-            self.queue_name,
-            timeout=5,
-        )
+        item = await self.redis.blpop(self.queue_name, timeout=5)
 
         if item is None:
             return None
 
         _, message = item
 
-        return json.loads(message)
+        try:
+            return json.loads(message)
+        except json.JSONDecodeError:
+            logger.exception("Malformed JSON message in queue")
+            return None

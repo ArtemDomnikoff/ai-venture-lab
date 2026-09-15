@@ -10,7 +10,7 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 from datetime import UTC, datetime
-from app.worker.execution import mock_analysis
+from app.worker.execution import run_analysis
 from app.core.config import get_settings
 from app.domain.enums import RunStatus
 from app.infra.redis import create_redis_client
@@ -37,7 +37,7 @@ def parse_run_id(message: dict) -> uuid.UUID:
 async def process_run(
     session: AsyncSession,
     run_id: uuid.UUID,
-    analysis_fn=mock_analysis,
+    analysis_fn=run_analysis,
 ) -> None:
     repository = RunRepository(session)
 
@@ -68,7 +68,11 @@ async def process_run(
     )
 
     try:
-        result = await analysis_fn(run.id)
+        result = await analysis_fn(
+            run.id,
+            run.project_id,
+            run.project.idea,
+        )
 
         run.result = result
         run.finished_at = datetime.now(UTC)

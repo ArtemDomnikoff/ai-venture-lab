@@ -6,7 +6,7 @@ if TYPE_CHECKING:
     from app.models.project import Project
 
 from sqlalchemy import Enum as SQLEnum
-from sqlalchemy import DateTime, ForeignKey, String
+from sqlalchemy import DateTime, ForeignKey, String, func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -67,7 +67,7 @@ class Run(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         nullable=False,
-        default=lambda: datetime.now(UTC),
+        server_default=func.now(),
     )
 
     project: Mapped["Project"] = relationship(
