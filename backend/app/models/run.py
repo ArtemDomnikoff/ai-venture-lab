@@ -9,6 +9,7 @@ from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
+from app.core.exceptions import RunInvalidStateError
 from app.db.base import Base
 from app.domain.enums import RunStatus
 
@@ -87,3 +88,18 @@ class Run(Base):
     project: Mapped["Project"] = relationship(
         back_populates="runs",
     )
+
+    def transition_to(
+        self,
+        target_status: RunStatus,
+    ) -> None:
+        if not self.status.can_transition_to(
+            target_status,
+        ):
+            raise RunInvalidStateError(
+                run_id=str(self.id),
+                current_status=self.status.value,
+                target_status=target_status.value,
+            )
+
+        self.status = target_status

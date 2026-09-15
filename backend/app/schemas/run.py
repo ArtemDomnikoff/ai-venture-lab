@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.domain.enums import RunStatus
 
@@ -23,7 +23,20 @@ class RunResponse(BaseModel):
     started_at: datetime | None
     finished_at: datetime | None
 
-    result: dict | None
     error: str | None
 
     created_at: datetime
+
+
+class RunListResponse(BaseModel):
+    items: list[RunResponse]
+    total: int = Field(
+        ge=0,
+    )
+    page: int = Field(
+        ge=1,
+    )
+    page_size: int = Field(
+        ge=1,
+        le=100,
+    )

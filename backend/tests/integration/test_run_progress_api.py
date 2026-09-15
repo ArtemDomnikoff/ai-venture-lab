@@ -160,9 +160,12 @@ async def test_get_missing_run_returns_404(
             )
 
         assert response.status_code == 404
-        assert response.json() == {
-            "detail": "Run not found",
-        }
+
+        body = response.json()
+
+        assert body["error"]["code"] == "RUN_NOT_FOUND"
+        assert body["error"]["message"] == "Run not found"
+        assert "details" in body["error"]
 
     finally:
         app.dependency_overrides.clear()

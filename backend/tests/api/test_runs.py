@@ -21,10 +21,11 @@ async def create_project(client: AsyncClient) -> dict:
 
     return response.json()
 
+
 @pytest.mark.asyncio
 async def test_create_run(
     client: AsyncClient,
-    fake_queue:FakeQueue,
+    fake_queue: FakeQueue,
 ) -> None:
     project = await create_project(client)
 
@@ -39,13 +40,18 @@ async def test_create_run(
     assert uuid.UUID(run["id"])
     assert run["project_id"] == project["id"]
     assert run["status"] == "queued"
+    assert run["progress"] == {}
+    assert run["current_node"] is None
     assert run["started_at"] is None
     assert run["finished_at"] is None
-    assert run["result"] is None
     assert run["error"] is None
+
+    assert "result" not in run
+
     assert fake_queue.enqueued_run_ids == [
-        uuid.UUID(run["id"])
+        uuid.UUID(run["id"]),
     ]
+
 
 @pytest.mark.asyncio
 async def test_create_run_project_not_found(
@@ -58,9 +64,15 @@ async def test_create_run_project_not_found(
     )
 
     assert response.status_code == 404
-    assert response.json() == {
-        "detail": "Project not found",
-    }
+
+    data = response.json()
+
+    assert data["error"]["code"] == "PROJECT_NOT_FOUND"
+    assert data["error"]["message"] == "Project not found"
+    assert data["error"]["details"]["project_id"] == str(
+        project_id,
+    )
+
 
 @pytest.mark.asyncio
 async def test_get_run(
@@ -83,6 +95,7 @@ async def test_get_run(
     assert response.status_code == 200
     assert response.json() == created_run
 
+
 @pytest.mark.asyncio
 async def test_get_run_not_found(
     client: AsyncClient,
@@ -94,9 +107,15 @@ async def test_get_run_not_found(
     )
 
     assert response.status_code == 404
-    assert response.json() == {
-        "detail": "Run not found",
-    }
+
+    data = response.json()
+
+    assert data["error"]["code"] == "RUN_NOT_FOUND"
+    assert data["error"]["message"] == "Run not found"
+    assert data["error"]["details"]["run_id"] == str(
+        run_id,
+    )
+
 
 @pytest.mark.asyncio
 async def test_get_project_runs(
@@ -108,29 +127,61 @@ async def test_get_project_runs(
     first_response = await client.post(
         f"/api/v1/projects/{project_id}/runs",
     )
-    second_response = await client.post(
-        f"/api/v1/projects/{project_id}/runs",
-    )
 
     assert first_response.status_code == 201
-    assert second_response.status_code == 201
 
     first_run = first_response.json()
-    second_run = second_response.json()
 
+    # The first run is queued, so it is still active.
+    # To create another run in this test, manually move it
+    # to a terminal state in the database through the API-independent
+    # session fixture is not available here.
+    #
+    # Therefore this test uses pagination against the single run.
     response = await client.get(
         f"/api/v1/projects/{project_id}/runs",
     )
 
     assert response.status_code == 200
 
-    runs = response.json()
+    data = response.json()
 
-    assert len(runs) == 2
-    assert {run["id"] for run in runs} == {
-        first_run["id"],
-        second_run["id"],
-    }
+    assert data["total"] == 1
+    assert data["page"] == 1
+    assert data["page_size"] == 20
+    assert len(data["items"]) == 1
+    assert data["items"][0] == first_run
+
+
+@pytest.mark.asyncio
+async def test_get_project_runs_with_pagination(
+    client: AsyncClient,
+) -> None:
+    project = await create_project(client)
+    project_id = project["id"]
+
+    first_response = await client.post(
+        f"/api/v1/projects/{project_id}/runs",
+    )
+
+    assert first_response.status_code == 201
+
+    first_run = first_response.json()
+
+    response = await client.get(
+        f"/api/v1/projects/{project_id}/runs"
+        "?page=1&page_size=1",
+    )
+
+    assert response.status_code == 200
+
+    data = response.json()
+
+    assert data["total"] == 1
+    assert data["page"] == 1
+    assert data["page_size"] == 1
+    assert data["items"] == [first_run]
+
 
 @pytest.mark.asyncio
 async def test_get_project_runs_project_not_found(
@@ -143,12 +194,18 @@ async def test_get_project_runs_project_not_found(
     )
 
     assert response.status_code == 404
-    assert response.json() == {
-        "detail": "Project not found",
-    }
+
+    data = response.json()
+
+    assert data["error"]["code"] == "PROJECT_NOT_FOUND"
+    assert data["error"]["message"] == "Project not found"
+    assert data["error"]["details"]["project_id"] == str(
+        project_id,
+    )
+
 
 @pytest.mark.asyncio
-async def test_create_multiple_runs(
+async def test_create_multiple_runs_returns_conflict_for_active_run(
     client: AsyncClient,
 ) -> None:
     project = await create_project(client)
@@ -157,18 +214,19 @@ async def test_create_multiple_runs(
     first_response = await client.post(
         f"/api/v1/projects/{project_id}/runs",
     )
+
+    assert first_response.status_code == 201
+
     second_response = await client.post(
         f"/api/v1/projects/{project_id}/runs",
     )
 
-    assert first_response.status_code == 201
-    assert second_response.status_code == 201
+    assert second_response.status_code == 409
 
-    first_run = first_response.json()
-    second_run = second_response.json()
+    data = second_response.json()
 
-    assert first_run["id"] != second_run["id"]
-    assert first_run["project_id"] == project_id
-    assert second_run["project_id"] == project_id
-    assert first_run["status"] == "queued"
-    assert second_run["status"] == "queued"
+    assert data["error"]["code"] == "RUN_ALREADY_RUNNING"
+    assert data["error"]["message"] == (
+        "Project already has an active analysis run"
+    )
+    assert data["error"]["details"]["project_id"] == project_id

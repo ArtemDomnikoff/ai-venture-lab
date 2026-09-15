@@ -129,7 +129,6 @@ async def test_process_run_completes_run() -> None:
             analysis_fn=analysis_fn,
         )
 
-    assert run.status is RunStatus.COMPLETED
     assert run.result == analysis_result
     assert run.error is None
     assert run.started_at is not None
@@ -139,9 +138,19 @@ async def test_process_run_completes_run() -> None:
         run_id,
     )
 
-    repository.update_status.assert_awaited_once_with(
+    assert repository.update_status.await_count == 2
+
+    first_update = repository.update_status.await_args_list[0]
+    second_update = repository.update_status.await_args_list[1]
+
+    assert first_update.args == (
         run,
         RunStatus.RUNNING,
+    )
+
+    assert second_update.args == (
+        run,
+        RunStatus.COMPLETED,
     )
 
     analysis_fn.assert_awaited_once_with(
@@ -180,6 +189,7 @@ async def test_process_run_ignores_missing_run() -> None:
     )
 
     analysis_fn.assert_not_awaited()
+    repository.update_status.assert_not_awaited()
     session.commit.assert_not_awaited()
 
 
@@ -217,9 +227,7 @@ async def test_process_run_ignores_non_queued_run() -> None:
     )
 
     analysis_fn.assert_not_awaited()
-
     repository.update_status.assert_not_awaited()
-
     session.commit.assert_not_awaited()
 
 
@@ -254,13 +262,23 @@ async def test_process_run_marks_run_failed_when_analysis_raises() -> None:
             analysis_fn=analysis_fn,
         )
 
-    assert run.status is RunStatus.FAILED
     assert run.error == "analysis failed"
     assert run.finished_at is not None
+    assert run.result is None
 
-    repository.update_status.assert_awaited_once_with(
+    assert repository.update_status.await_count == 2
+
+    first_update = repository.update_status.await_args_list[0]
+    second_update = repository.update_status.await_args_list[1]
+
+    assert first_update.args == (
         run,
         RunStatus.RUNNING,
+    )
+
+    assert second_update.args == (
+        run,
+        RunStatus.FAILED,
     )
 
     analysis_fn.assert_awaited_once_with(

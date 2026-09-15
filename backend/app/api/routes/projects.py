@@ -1,10 +1,18 @@
+from __future__ import annotations
+
 import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.deps import get_session
-from app.schemas.project import ProjectCreate, ProjectResponse
+from app.core.exceptions import ProjectNotFoundError
+from app.schemas.project import (
+    ProjectCreate,
+    ProjectListResponse,
+    ProjectResponse,
+    ProjectUpdate,
+)
 from app.services.project import ProjectService
 
 
@@ -30,19 +38,40 @@ async def create_project(
 
 @router.get(
     "",
-    response_model=list[ProjectResponse],
+    response_model=ProjectListResponse,
+    status_code=status.HTTP_200_OK,
 )
 async def get_projects(
+    page: int = Query(
+        default=1,
+        ge=1,
+    ),
+    page_size: int = Query(
+        default=20,
+        ge=1,
+        le=100,
+    ),
     session: AsyncSession = Depends(get_session),
-) -> list[ProjectResponse]:
+) -> ProjectListResponse:
     service = ProjectService(session)
 
-    return await service.get_projects()
+    projects, total = await service.get_projects(
+        page=page,
+        page_size=page_size,
+    )
+
+    return ProjectListResponse(
+        items=projects,
+        total=total,
+        page=page,
+        page_size=page_size,
+    )
 
 
 @router.get(
     "/{project_id}",
     response_model=ProjectResponse,
+    status_code=status.HTTP_200_OK,
 )
 async def get_project(
     project_id: uuid.UUID,
@@ -53,9 +82,33 @@ async def get_project(
     project = await service.get_project(project_id)
 
     if project is None:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found",
+        raise ProjectNotFoundError(
+            str(project_id),
+        )
+
+    return project
+
+
+@router.patch(
+    "/{project_id}",
+    response_model=ProjectResponse,
+    status_code=status.HTTP_200_OK,
+)
+async def update_project(
+    project_id: uuid.UUID,
+    data: ProjectUpdate,
+    session: AsyncSession = Depends(get_session),
+) -> ProjectResponse:
+    service = ProjectService(session)
+
+    project = await service.update_project(
+        project_id,
+        data,
+    )
+
+    if project is None:
+        raise ProjectNotFoundError(
+            str(project_id),
         )
 
     return project
@@ -74,7 +127,6 @@ async def delete_project(
     deleted = await service.delete_project(project_id)
 
     if not deleted:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found",
+        raise ProjectNotFoundError(
+            str(project_id),
         )

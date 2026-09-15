@@ -24,7 +24,9 @@ from app.worker.execution import run_analysis
 logger = logging.getLogger(__name__)
 
 
-def parse_run_id(message: dict) -> uuid.UUID:
+def parse_run_id(
+    message: dict,
+) -> uuid.UUID:
     if message.get("type") != "run_analysis":
         raise ValueError(
             f"Unsupported message type: {message.get('type')!r}"
@@ -47,7 +49,9 @@ async def process_run(
 ) -> None:
     repository = RunRepository(session)
 
-    run = await repository.get_by_id(run_id)
+    run = await repository.get_by_id(
+        run_id,
+    )
 
     logger.info(
         "Run received",
@@ -100,7 +104,11 @@ async def process_run(
 
         run.result = result
         run.finished_at = datetime.now(UTC)
-        run.status = RunStatus.COMPLETED
+
+        await repository.update_status(
+            run,
+            RunStatus.COMPLETED,
+        )
 
         await session.commit()
 
@@ -112,9 +120,13 @@ async def process_run(
         )
 
     except Exception as exc:
-        run.status = RunStatus.FAILED
         run.error = str(exc)
         run.finished_at = datetime.now(UTC)
+
+        await repository.update_status(
+            run,
+            RunStatus.FAILED,
+        )
 
         await session.commit()
 
@@ -187,7 +199,9 @@ async def main() -> None:
             )
 
             try:
-                run_id = parse_run_id(message)
+                run_id = parse_run_id(
+                    message,
+                )
 
             except (ValueError, TypeError):
                 logger.exception(

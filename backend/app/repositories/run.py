@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
@@ -14,7 +14,7 @@ class RunRepository:
     def __init__(
         self,
         session: AsyncSession,
-    ):
+    ) -> None:
         self.session = session
 
     async def create(
@@ -52,6 +52,29 @@ class RunRepository:
 
         return result.scalar_one_or_none()
 
+    async def get_active_by_project_id(
+        self,
+        project_id: uuid.UUID,
+    ) -> Run | None:
+        result = await self.session.execute(
+            select(Run)
+            .where(
+                Run.project_id == project_id,
+                Run.status.in_(
+                    (
+                        RunStatus.QUEUED,
+                        RunStatus.RUNNING,
+                    )
+                ),
+            )
+            .order_by(
+                Run.created_at.desc(),
+            )
+            .limit(1)
+        )
+
+        return result.scalar_one_or_none()
+
     async def get_by_project_id(
         self,
         project_id: uuid.UUID,
@@ -66,16 +89,47 @@ class RunRepository:
             )
         )
 
-        return list(
-            result.scalars().all()
+        return list(result.scalars().all())
+
+    async def get_project_page(
+        self,
+        *,
+        project_id: uuid.UUID,
+        page: int,
+        page_size: int,
+    ) -> tuple[list[Run], int]:
+        offset = (page - 1) * page_size
+
+        total_result = await self.session.execute(
+            select(func.count(Run.id)).where(
+                Run.project_id == project_id,
+            )
         )
+
+        total = total_result.scalar_one()
+
+        result = await self.session.execute(
+            select(Run)
+            .where(
+                Run.project_id == project_id,
+            )
+            .order_by(
+                Run.created_at.desc(),
+            )
+            .offset(offset)
+            .limit(page_size)
+        )
+
+        runs = list(result.scalars().all())
+
+        return runs, total
 
     async def update_status(
         self,
         run: Run,
         status: RunStatus,
     ) -> Run:
-        run.status = status
+        run.transition_to(status)
 
         await self.session.flush()
         await self.session.refresh(run)
