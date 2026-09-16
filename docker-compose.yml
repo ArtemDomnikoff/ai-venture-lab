@@ -94,8 +94,13 @@ services:
       context: ./frontend
     container_name: venture_lab_frontend
     restart: unless-stopped
+
+    env_file:
+      - ./frontend/.env.local
+
     ports:
       - "3000:3000"
+
     depends_on:
       - backend
 
