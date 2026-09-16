@@ -1,13 +1,133 @@
-export default function Home() {
-  return (
-    <main className="min-h-screen p-10">
-      <h1 className="text-4xl font-bold">
-        AI Venture Lab
-      </h1>
+import IdeaForm from "@/components/IdeaForm";
 
-      <p className="mt-4 text-gray-600">
-        Multi-agent venture research platform
-      </p>
+
+export default function Home() {
+
+  return (
+
+    <main
+
+      className="
+        flex
+        min-h-screen
+        flex-col
+        items-center
+        justify-center
+        px-6
+      "
+
+    >
+
+      <div
+
+        className="
+          w-full
+          max-w-4xl
+          text-center
+        "
+
+      >
+
+
+        <div
+          className="
+            inline-flex
+            rounded-full
+            border
+            px-4
+            py-2
+            text-lg
+            font-medium
+          "
+
+          style={{
+            color:
+              "var(--primary)",
+          }}
+
+        >
+
+          AI-powered venture analysis
+
+        </div>
+
+
+
+
+
+        <h1
+
+          className="
+            mt-8
+            text-5xl
+            font-bold
+            tracking-tight
+            sm:text-6xl
+          "
+
+        >
+
+          Turn startup ideas into
+          <br />
+
+          actionable insights
+
+        </h1>
+
+
+
+
+
+        <p
+
+          className="
+            mx-auto
+            mt-6
+            max-w-2xl
+            text-lg
+            leading-8
+          "
+
+          style={{
+            color:
+              "var(--muted)",
+          }}
+
+        >
+
+          Analyze your startup idea with a team
+          of autonomous AI agents.
+          Market research, customer analysis,
+          competition review and business
+          evaluation in one report.
+
+        </p>
+
+
+
+
+
+        <div
+
+          className="
+            mx-auto
+            mt-10
+            w-full
+            max-w-2xl
+          "
+
+        >
+
+          <IdeaForm />
+
+        </div>
+
+
+      </div>
+
+
     </main>
+
   );
+
 }

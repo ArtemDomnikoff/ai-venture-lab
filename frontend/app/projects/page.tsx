@@ -6,58 +6,222 @@ import {
 
 
 export default async function ProjectsPage() {
+
   const data = await getProjects();
 
+
   return (
-    <main className="min-h-screen p-10">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-bold">
-            Projects
-          </h1>
 
-          <p className="mt-2 text-gray-600">
-            Venture analysis projects
-          </p>
-        </div>
+    <main
+      className="
+        min-h-screen
+        bg-[var(--background)]
+        px-4
+        py-8
+        sm:px-8
+        lg:px-12
+      "
+    >
 
-        <Link
-          href="/projects/new"
-          className="rounded bg-black px-4 py-2 text-white"
+      <div
+        className="
+          mx-auto
+          max-w-6xl
+        "
+      >
+
+        <div
+          className="
+            flex
+            flex-col
+            gap-6
+            sm:flex-row
+            sm:items-center
+            sm:justify-between
+          "
         >
-          New Project
-        </Link>
-      </div>
+
+          <div>
+
+            <h1
+              className="
+                text-3xl
+                font-bold
+                tracking-tight
+                text-[var(--foreground)]
+                sm:text-4xl
+              "
+            >
+              Projects
+            </h1>
 
 
-      <div className="mt-8 grid gap-4">
-        {data.items.map((project) => (
-          <Link
-            key={project.id}
-            href={`/projects/${project.id}`}
-            className="rounded-lg border p-5 hover:bg-gray-50"
-          >
-            <h2 className="text-xl font-semibold">
-              {project.name}
-            </h2>
-
-            <p className="mt-2 text-gray-600">
-              {project.idea}
+            <p
+              className="
+                mt-2
+                text-[var(--muted)]
+              "
+            >
+              Venture analysis projects
             </p>
 
-            <div className="mt-3 text-sm">
-              Status: {project.status}
-            </div>
+          </div>
+
+
+
+          <Link
+            href="/projects/new"
+            className="
+              inline-flex
+              items-center
+              justify-center
+              rounded-xl
+              bg-[var(--primary)]
+              px-5
+              py-3
+              font-medium
+              text-white
+              transition
+              hover:bg-[var(--primary-hover)]
+            "
+          >
+            New Project
           </Link>
-        ))}
+
+        </div>
+
+
+
+        <div
+          className="
+            mt-10
+            grid
+            gap-5
+            sm:grid-cols-2
+            lg:grid-cols-3
+          "
+        >
+
+          {data.items.map(
+            (project) => (
+
+              <Link
+                key={project.id}
+                href={`/projects/${project.id}`}
+                className="
+                  group
+                  rounded-2xl
+                  border
+                  border-[var(--border)]
+                  bg-[var(--card)]
+                  p-6
+                  transition
+                  hover:-translate-y-1
+                  hover:shadow-lg
+                "
+              >
+
+                <div
+                  className="
+                    flex
+                    items-start
+                    justify-between
+                    gap-4
+                  "
+                >
+
+                  <h2
+                    className="
+                      text-xl
+                      font-semibold
+                      text-[var(--foreground)]
+                    "
+                  >
+                    {project.name}
+                  </h2>
+
+
+                  <span
+                    className="
+                      rounded-full
+                      bg-[var(--background)]
+                      px-3
+                      py-1
+                      text-xs
+                      font-medium
+                      text-[var(--muted)]
+                    "
+                  >
+                    {project.status}
+                  </span>
+
+                </div>
+
+
+
+                <p
+                  className="
+                    mt-4
+                    line-clamp-3
+                    text-sm
+                    leading-6
+                    text-[var(--muted)]
+                  "
+                >
+                  {project.idea}
+                </p>
+
+
+
+                <div
+                  className="
+                    mt-6
+                    text-sm
+                    text-[var(--muted)]
+                  "
+                >
+                  Open analysis →
+                </div>
+
+
+              </Link>
+
+            )
+          )}
+
+        </div>
+
+
+
+        {data.items.length === 0 && (
+
+          <div
+            className="
+              mt-10
+              rounded-2xl
+              border
+              border-[var(--border)]
+              bg-[var(--card)]
+              p-8
+              text-center
+            "
+          >
+
+            <p
+              className="
+                text-[var(--muted)]
+              "
+            >
+              No projects yet.
+            </p>
+
+          </div>
+
+        )}
+
       </div>
 
-
-      {data.items.length === 0 && (
-        <p className="mt-10 text-gray-500">
-          No projects yet.
-        </p>
-      )}
     </main>
+
   );
 }

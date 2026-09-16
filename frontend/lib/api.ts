@@ -1,5 +1,15 @@
 const API_URL =
-  process.env.API_URL ?? "http://localhost:8000/api/v1";
+  typeof window === "undefined"
+    ? process.env.INTERNAL_API_URL
+    : process.env.NEXT_PUBLIC_API_URL;
+
+
+if (!API_URL) {
+  throw new Error(
+    "API URL is not configured",
+  );
+}
+
 
 export async function apiFetch<T>(
   path: string,
@@ -13,11 +23,13 @@ export async function apiFetch<T>(
     },
   );
 
+
   if (!response.ok) {
     throw new Error(
       `API error: ${response.status}`,
     );
   }
+
 
   return response.json();
 }
