@@ -45,6 +45,37 @@ export function createProject(
 }
 
 
+export function updateProject(
+    id: string,
+    idea: string,
+) {
+    return apiFetch<Project>(
+        `/projects/${id}`,
+        {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                idea,
+            }),
+        },
+    );
+}
+
+
+export function deleteProject(
+    id: string,
+) {
+    return apiFetch<void>(
+        `/projects/${id}`,
+        {
+            method: "DELETE",
+        },
+    );
+}
+
+
 export function createRun(
     projectId: string,
 ) {
@@ -55,3 +86,4 @@ export function createRun(
         },
     );
 }
+

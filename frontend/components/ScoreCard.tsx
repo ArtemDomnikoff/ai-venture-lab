@@ -5,15 +5,15 @@ interface Props {
 
 
 function ScoreColor(
-  score: number,
+  score:number,
 ) {
 
-  if (score >= 80) {
+  if(score >= 80) {
     return "var(--success)";
   }
 
 
-  if (score >= 50) {
+  if(score >= 50) {
     return "var(--warning)";
   }
 
@@ -24,22 +24,46 @@ function ScoreColor(
 
 
 
+function ScoreLabel(
+  score:number,
+) {
+
+  if(score >= 80) {
+    return "Strong";
+  }
+
+
+  if(score >= 50) {
+    return "Moderate";
+  }
+
+
+  return "Weak";
+
+}
+
+
+
+
+
 export default function ScoreCard(
   {
     score,
-  }: Props,
+  }:Props,
 ) {
 
 
   const percentage =
-    Math.min(
-      Math.max(score, 0),
-      100,
-    );
+    Number.isFinite(score)
+      ? Math.min(
+          Math.max(
+            score,
+            0,
+          ),
+          100,
+        )
+      : 0;
 
-
-  const rotation =
-    `${percentage * 3.6}deg`;
 
 
   const color =
@@ -56,49 +80,41 @@ export default function ScoreCard(
         flex
         flex-col
         items-center
-        justify-center
-        gap-4
+        gap-5
       "
     >
+
 
 
       <div
         className="
           relative
-          flex
-          h-36
-          w-36
-          items-center
-          justify-center
+          h-44
+          w-44
           rounded-full
-          transition-all
-          duration-700
-          sm:h-44
-          sm:w-44
         "
         style={{
           background:
             `conic-gradient(
               ${color}
-              ${rotation},
+              ${percentage * 3.6}deg,
               var(--border)
-              ${rotation}
+              ${percentage * 3.6}deg
             )`,
         }}
       >
 
 
+
         <div
           className="
+            absolute
+            inset-3
             flex
-            h-28
-            w-28
             items-center
             justify-center
             rounded-full
             bg-[var(--card)]
-            sm:h-32
-            sm:w-32
           "
         >
 
@@ -109,16 +125,17 @@ export default function ScoreCard(
             "
           >
 
+
             <div
               className="
-                text-4xl
+                text-5xl
                 font-bold
                 text-[var(--foreground)]
-                sm:text-5xl
               "
             >
               {percentage}
             </div>
+
 
 
             <div
@@ -141,13 +158,41 @@ export default function ScoreCard(
 
 
 
+
+
       <div
         className="
-          text-sm
-          text-[var(--muted)]
+          text-center
         "
       >
-        Venture score
+
+        <div
+          className="
+            text-sm
+            font-semibold
+          "
+          style={{
+            color,
+          }}
+        >
+          {ScoreLabel(
+            percentage,
+          )}
+        </div>
+
+
+
+        <div
+          className="
+            mt-1
+            text-sm
+            text-[var(--muted)]
+          "
+        >
+          Venture score
+        </div>
+
+
       </div>
 
 

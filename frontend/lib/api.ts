@@ -15,6 +15,7 @@ export async function apiFetch<T>(
   path: string,
   options?: RequestInit,
 ): Promise<T> {
+
   const response = await fetch(
     `${API_URL}${path}`,
     {
@@ -31,5 +32,13 @@ export async function apiFetch<T>(
   }
 
 
+  if (
+    response.status === 204
+  ) {
+    return undefined as T;
+  }
+
+
   return response.json();
+
 }

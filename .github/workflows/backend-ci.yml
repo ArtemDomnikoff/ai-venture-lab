@@ -2,6 +2,7 @@ name: Backend CI
 
 
 on:
+
   push:
     branches:
       - development
@@ -16,7 +17,10 @@ on:
 
 jobs:
 
-  backend-test:
+
+  test:
+
+    name: Backend tests
 
     runs-on: ubuntu-latest
 
@@ -24,6 +28,7 @@ jobs:
     defaults:
       run:
         working-directory: backend
+
 
 
     steps:
@@ -34,7 +39,14 @@ jobs:
 
 
 
-      - name: Setup Python
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+
+
+
+      - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
@@ -43,10 +55,10 @@ jobs:
 
       - name: Install dependencies
         run: |
-          pip install -r requirements.txt
+          uv sync
 
 
 
       - name: Run tests
         run: |
-          pytest
+          uv run pytest

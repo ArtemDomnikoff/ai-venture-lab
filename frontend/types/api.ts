@@ -59,11 +59,6 @@ export interface RunListResponse {
 }
 
 
-/*
- * Analysis result
- */
-
-
 export interface Evidence {
   claim: string;
   source: string;
@@ -95,29 +90,6 @@ export interface AgentReport {
   score?: number;
 
   decision?: string;
-
-  [key: string]: unknown;
-}
-
-
-export interface AnalysisResult {
-  run_id: string;
-
-  score: number;
-
-  decision: string;
-
-  summary: string;
-
-  created_at: string;
-
-  researcher?: AgentReport;
-  customer?: AgentReport;
-  competitor?: AgentReport;
-  tech?: AgentReport;
-  business?: AgentReport;
-  skeptic?: AgentReport;
-  judge?: AgentReport;
 
   [key: string]: unknown;
 }

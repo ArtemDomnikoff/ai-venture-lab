@@ -43,3 +43,14 @@ export function getProjectRuns(
     `/projects/${projectId}/runs`,
   );
 }
+
+export function deleteRun(
+  runId: string,
+) {
+  return apiFetch<void>(
+    `/runs/${runId}`,
+    {
+      method: "DELETE",
+    },
+  );
+}

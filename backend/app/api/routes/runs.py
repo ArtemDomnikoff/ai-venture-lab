@@ -94,3 +94,26 @@ async def get_run(
         )
 
     return run
+
+
+@runs_router.delete(
+    "/{run_id}",
+    status_code=status.HTTP_204_NO_CONTENT,
+)
+async def delete_run(
+    run_id: uuid.UUID,
+    session: AsyncSession = Depends(get_session),
+) -> None:
+
+    service = RunService(session)
+
+
+    deleted = await service.delete_run(
+        run_id,
+    )
+
+
+    if not deleted:
+        raise RunNotFoundError(
+            str(run_id),
+        )

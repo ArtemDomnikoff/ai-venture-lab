@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 import {
   getRun,
 } from "@/lib/runs";
@@ -48,9 +50,46 @@ export default async function RunPage(
         "
       >
 
+
+        <Link
+          href={`/projects/${run.project_id}`}
+          className="
+            mb-6
+            inline-flex
+            items-center
+            gap-2
+
+            rounded-xl
+
+            border
+            border-[var(--border)]
+
+            bg-[var(--card)]
+
+            px-4
+            py-2
+
+            text-sm
+            font-medium
+
+            text-[var(--foreground)]
+
+            transition
+
+            hover:bg-[var(--background)]
+          "
+        >
+
+          ← Back to project
+
+        </Link>
+
+
+
         <RunViewer
           initialRun={run}
         />
+
 
       </div>
 

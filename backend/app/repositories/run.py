@@ -150,3 +150,13 @@ class RunRepository:
         await self.session.refresh(run)
 
         return run
+
+    async def delete(
+            self,
+            run: Run,
+    ) -> None:
+        await self.session.delete(
+            run,
+        )
+
+        await self.session.flush()

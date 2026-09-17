@@ -107,3 +107,23 @@ class RunService:
             page=page,
             page_size=page_size,
         )
+
+    async def delete_run(
+            self,
+            run_id: uuid.UUID,
+    ) -> bool:
+
+        run = await self.run_repository.get_by_id(
+            run_id,
+        )
+
+        if run is None:
+            return False
+
+        await self.run_repository.delete(
+            run,
+        )
+
+        await self.session.commit()
+
+        return True

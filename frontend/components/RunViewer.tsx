@@ -41,7 +41,9 @@ export default function RunViewer(
   const [
     run,
     setRun,
-  ] = useState(initialRun);
+  ] = useState<Run>(
+    initialRun,
+  );
 
 
 
@@ -57,10 +59,9 @@ export default function RunViewer(
   const [
     findings,
     setFindings,
-  ] = useState<Finding[]>([]);
-
-
-
+  ] = useState<Finding[]>(
+    [],
+  );
 
 
 
@@ -81,7 +82,6 @@ export default function RunViewer(
     setFindings(findings);
 
   }
-
 
 
 
@@ -116,8 +116,6 @@ export default function RunViewer(
 
 
 
-
-
       const interval =
         setInterval(
           async()=>{
@@ -127,7 +125,6 @@ export default function RunViewer(
               await getRun(
                 run.id,
               );
-
 
 
             setRun(updated);
@@ -145,16 +142,25 @@ export default function RunViewer(
             }
 
 
+            if(
+              updated.status === "failed"
+            ) {
+
+              clearInterval(
+                interval,
+              );
+
+            }
+
+
           },
           3000,
         );
 
 
 
-
       return () =>
         clearInterval(interval);
-
 
 
     },
@@ -165,6 +171,14 @@ export default function RunViewer(
   );
 
 
+
+
+
+
+  const isRunning =
+    run.status !== "completed"
+    &&
+    run.status !== "failed";
 
 
 
@@ -180,6 +194,7 @@ export default function RunViewer(
 
 
 
+      {/* HEADER */}
 
       <section
         className="
@@ -225,6 +240,7 @@ export default function RunViewer(
               AI multi-agent evaluation report
             </p>
 
+
           </div>
 
 
@@ -235,56 +251,6 @@ export default function RunViewer(
             }
           />
 
-        </div>
-
-
-      </section>
-
-
-
-
-
-
-      <section
-        className="
-          rounded-2xl
-          border
-          border-[var(--border)]
-          bg-[var(--card)]
-          p-6
-          sm:p-8
-        "
-      >
-
-        <h2
-          className="
-            text-2xl
-            font-bold
-            text-[var(--foreground)]
-          "
-        >
-          Agent pipeline
-        </h2>
-
-
-        <p
-          className="
-            mt-2
-            text-[var(--muted)]
-          "
-        >
-          Analysis workflow status
-        </p>
-
-
-
-        <div className="mt-6">
-
-          <AgentTimeline
-            progress={
-              run.progress
-            }
-          />
 
         </div>
 
@@ -296,6 +262,69 @@ export default function RunViewer(
 
 
 
+      {/* PIPELINE */}
+
+      {
+        isRunning
+        &&
+        (
+
+          <section
+            className="
+              rounded-2xl
+              border
+              border-[var(--border)]
+              bg-[var(--card)]
+              p-6
+              sm:p-8
+            "
+          >
+
+            <h2
+              className="
+                text-2xl
+                font-bold
+                text-[var(--foreground)]
+              "
+            >
+              Agent pipeline
+            </h2>
+
+
+            <p
+              className="
+                mt-2
+                text-[var(--muted)]
+              "
+            >
+              Analysis workflow status
+            </p>
+
+
+
+            <div className="mt-6">
+
+              <AgentTimeline
+                progress={
+                  run.progress
+                }
+              />
+
+            </div>
+
+
+          </section>
+
+        )
+      }
+
+
+
+
+
+
+
+      {/* ERROR */}
 
       {
         run.status === "failed"
@@ -344,126 +373,134 @@ export default function RunViewer(
 
 
 
+      {/* RESULT */}
 
       {
         result
         &&
         (
 
-          <>
+          <section
+            className="
+              grid
+              gap-8
+              rounded-2xl
+              border
+              border-[var(--border)]
+              bg-[var(--card)]
+              p-6
+              md:grid-cols-3
+              sm:p-8
+            "
+          >
 
-            <section
+
+            <div
               className="
-                grid
-                gap-8
-                rounded-2xl
-                border
-                border-[var(--border)]
-                bg-[var(--card)]
-                p-6
-                md:grid-cols-3
-                sm:p-8
+                flex
+                justify-center
               "
             >
 
+              <ScoreCard
+                score={
+                  result.score
+                }
+              />
 
-              <div
-                className="
-                  flex
-                  justify-center
-                "
-              >
 
-                <ScoreCard
-                  score={
-                    result.score
-                  }
-                />
-
-              </div>
+            </div>
 
 
 
 
 
-              <div
-                className="
-                  md:col-span-2
-                "
-              >
+            <div
+              className="
+                md:col-span-2
+              "
+            >
 
-                <DecisionBadge
-                  decision={
-                    result.decision
-                  }
-                />
-
-
-
-                <h2
-                  className="
-                    mt-5
-                    text-2xl
-                    font-bold
-                    text-[var(--foreground)]
-                  "
-                >
-                  Final decision
-                </h2>
+              <DecisionBadge
+                decision={
+                  result.decision
+                }
+              />
 
 
-
-                <p
-                  className="
-                    mt-4
-                    leading-7
-                    text-[var(--muted)]
-                  "
-                >
-                  {result.summary}
-                </p>
-
-
-              </div>
-
-
-            </section>
-
-
-
-
-
-
-
-
-            <section>
 
               <h2
                 className="
-                  mb-5
+                  mt-5
                   text-2xl
                   font-bold
                   text-[var(--foreground)]
                 "
               >
-                Findings
+                Final decision
               </h2>
 
 
 
-              <div
+              <p
                 className="
-                  grid
-                  gap-6
-                  md:grid-cols-2
+                  mt-4
+                  leading-7
+                  text-[var(--muted)]
                 "
               >
+                {result.summary}
+              </p>
 
-                {
-                  findings.map(
-                    (
-                      finding,
-                    ) => (
+
+            </div>
+
+
+          </section>
+
+        )
+      }
+
+
+
+
+
+
+
+
+      {/* FINDINGS */}
+
+      {
+        result
+        &&
+        (
+
+          <section>
+
+            <h2
+              className="
+                mb-5
+                text-2xl
+                font-bold
+                text-[var(--foreground)]
+              "
+            >
+              Findings
+            </h2>
+
+
+
+            <div
+              className="
+                grid
+                gap-6
+                md:grid-cols-2
+              "
+            >
+
+              {
+                findings.map(
+                  finding => (
 
                     <FindingCard
                       key={
@@ -474,16 +511,15 @@ export default function RunViewer(
                       }
                     />
 
-                  ))
-                }
-
-              </div>
-
-
-            </section>
+                  )
+                )
+              }
 
 
-          </>
+            </div>
+
+
+          </section>
 
         )
       }
