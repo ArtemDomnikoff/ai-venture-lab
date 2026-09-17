@@ -15,6 +15,7 @@ on:
 
 
 
+
 jobs:
 
 
@@ -31,34 +32,114 @@ jobs:
 
 
 
+    services:
+
+      postgres:
+
+        image: postgres:16-alpine
+
+        env:
+
+          POSTGRES_DB: venture_lab_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+
+
+        ports:
+
+          - 15432:5432
+
+
+        options: >-
+          --health-cmd "pg_isready -U postgres -d venture_lab_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+
+
+
+      redis:
+
+        image: redis:7-alpine
+
+
+        ports:
+
+          - 6379:6379
+
+
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+
+
+
+
     steps:
 
 
       - name: Checkout repository
+
         uses: actions/checkout@v4
 
 
 
+
+
       - name: Install uv
+
         uses: astral-sh/setup-uv@v5
+
         with:
+
           enable-cache: true
 
 
 
+
+
       - name: Set up Python
+
         uses: actions/setup-python@v5
+
         with:
+
           python-version: "3.12"
 
 
 
+
+
       - name: Install dependencies
+
         run: |
+
           uv sync
 
 
 
+
+
       - name: Run tests
+
+        env:
+
+          APP_ENV: test
+
+          POSTGRES_HOST: 127.0.0.1
+          POSTGRES_PORT: 15432
+          POSTGRES_DB: venture_lab_test
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: 6379
+
+
         run: |
+
           uv run pytest
