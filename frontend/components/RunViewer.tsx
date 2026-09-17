@@ -1,6 +1,8 @@
 "use client";
 
+
 import {
+  useCallback,
   useEffect,
   useState,
 } from "react";
@@ -65,23 +67,39 @@ export default function RunViewer(
 
 
 
-  async function loadResult(
-    runId:string,
-  ) {
-
-    const [
-      result,
-      findings,
-    ] = await Promise.all([
-      getRunResult(runId),
-      getRunFindings(runId),
-    ]);
 
 
-    setResult(result);
-    setFindings(findings);
+  const loadResult =
+    useCallback(
+      async (
+        runId: string,
+      ) => {
 
-  }
+        const [
+          nextResult,
+          nextFindings,
+        ] = await Promise.all([
+          getRunResult(
+            runId,
+          ),
+          getRunFindings(
+            runId,
+          ),
+        ]);
+
+
+        setResult(
+          nextResult,
+        );
+
+
+        setFindings(
+          nextFindings,
+        );
+
+      },
+      [],
+    );
 
 
 
@@ -91,22 +109,44 @@ export default function RunViewer(
   useEffect(
     () => {
 
-
-      if(
+      if (
         run.status === "completed"
       ) {
 
-        loadResult(
-          run.id,
-        );
+        const timeout =
+          setTimeout(
+            () => {
 
-        return;
+              loadResult(
+                run.id,
+              )
+                .catch(
+                  error => {
+
+                    console.error(
+                      "Failed to load run result",
+                      error,
+                    );
+
+                  },
+                );
+
+            },
+            0,
+          );
+
+
+        return () =>
+          clearTimeout(
+            timeout,
+          );
 
       }
 
 
 
-      if(
+
+      if (
         run.status === "failed"
       ) {
 
@@ -116,42 +156,54 @@ export default function RunViewer(
 
 
 
+
+      let cancelled = false;
+
+
+
       const interval =
         setInterval(
-          async()=>{
+          async () => {
+
+            try {
+
+              const updated =
+                await getRun(
+                  run.id,
+                );
 
 
-            const updated =
-              await getRun(
-                run.id,
+              if (
+                cancelled
+              ) {
+
+                return;
+
+              }
+
+
+
+              setRun(
+                updated,
               );
 
-
-            setRun(updated);
-
-
-
-            if(
-              updated.status === "completed"
-            ) {
-
-              loadResult(
-                updated.id,
-              );
 
             }
 
+            catch(error) {
 
-            if(
-              updated.status === "failed"
-            ) {
+              if (
+                !cancelled
+              ) {
 
-              clearInterval(
-                interval,
-              );
+                console.error(
+                  "Failed to refresh run",
+                  error,
+                );
+
+              }
 
             }
-
 
           },
           3000,
@@ -159,14 +211,23 @@ export default function RunViewer(
 
 
 
-      return () =>
-        clearInterval(interval);
+
+      return () => {
+
+        cancelled = true;
+
+        clearInterval(
+          interval,
+        );
+
+      };
 
 
     },
     [
       run.id,
       run.status,
+      loadResult,
     ],
   );
 
@@ -179,6 +240,7 @@ export default function RunViewer(
     run.status !== "completed"
     &&
     run.status !== "failed";
+
 
 
 
@@ -227,7 +289,9 @@ export default function RunViewer(
                 text-[var(--foreground)]
               "
             >
+
               Venture Analysis
+
             </h1>
 
 
@@ -237,7 +301,9 @@ export default function RunViewer(
                 text-[var(--muted)]
               "
             >
+
               AI multi-agent evaluation report
+
             </p>
 
 
@@ -287,7 +353,9 @@ export default function RunViewer(
                 text-[var(--foreground)]
               "
             >
+
               Agent pipeline
+
             </h2>
 
 
@@ -297,12 +365,18 @@ export default function RunViewer(
                 text-[var(--muted)]
               "
             >
+
               Analysis workflow status
+
             </p>
 
 
 
-            <div className="mt-6">
+            <div
+              className="
+                mt-6
+              "
+            >
 
               <AgentTimeline
                 progress={
@@ -348,7 +422,9 @@ export default function RunViewer(
                 text-[var(--danger)]
               "
             >
+
               Analysis failed
+
             </h2>
 
 
@@ -358,7 +434,9 @@ export default function RunViewer(
                 text-[var(--foreground)]
               "
             >
+
               {run.error}
+
             </p>
 
 
@@ -437,7 +515,9 @@ export default function RunViewer(
                   text-[var(--foreground)]
                 "
               >
+
                 Final decision
+
               </h2>
 
 
@@ -449,7 +529,9 @@ export default function RunViewer(
                   text-[var(--muted)]
                 "
               >
+
                 {result.summary}
+
               </p>
 
 
@@ -485,7 +567,9 @@ export default function RunViewer(
                 text-[var(--foreground)]
               "
             >
+
               Findings
+
             </h2>
 
 

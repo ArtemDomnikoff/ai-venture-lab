@@ -2,6 +2,7 @@
 
 
 import {
+  useCallback,
   useEffect,
   useState,
 } from "react";
@@ -65,19 +66,37 @@ export default function ProjectViewer(
 
 
 
-  async function refreshRuns() {
+  const refreshRuns =
+    useCallback(
+      async () => {
 
-    const response =
-      await getProjectRuns(
+        try {
+
+          const response =
+            await getProjectRuns(
+              project.id,
+            );
+
+
+          setRuns(
+            response.items,
+          );
+
+
+        } catch(error) {
+
+          console.error(
+            "Failed to refresh runs",
+            error,
+          );
+
+        }
+
+      },
+      [
         project.id,
-      );
-
-
-    setRuns(
-      response.items,
+      ],
     );
-
-  }
 
 
 
@@ -86,6 +105,11 @@ export default function ProjectViewer(
 
 
   async function startRun() {
+
+    if (loading) {
+      return;
+    }
+
 
     setLoading(true);
 
@@ -98,6 +122,14 @@ export default function ProjectViewer(
 
 
       await refreshRuns();
+
+
+    } catch(error) {
+
+      console.error(
+        "Failed to start run",
+        error,
+      );
 
 
     } finally {
@@ -117,7 +149,6 @@ export default function ProjectViewer(
   useEffect(
     () => {
 
-
       const hasActiveRun =
         runs.some(
           run =>
@@ -127,23 +158,18 @@ export default function ProjectViewer(
         );
 
 
-
-      if(
-        !hasActiveRun
-      ) {
-
+      if (!hasActiveRun) {
         return;
-
       }
-
 
 
       const interval =
         setInterval(
-          refreshRuns,
+          () => {
+            refreshRuns();
+          },
           3000,
         );
-
 
 
       return () =>
@@ -155,7 +181,7 @@ export default function ProjectViewer(
     },
     [
       runs,
-      project.id,
+      refreshRuns,
     ],
   );
 
@@ -368,15 +394,28 @@ export default function ProjectViewer(
 
           {
             runs.map(
-              run => (
+              (
+                run,
+                index,
+              ) => (
 
                 <RunCard
                   key={
                     run.id
                   }
+
                   run={
                     run
                   }
+
+                  runNumber={
+                    runs.length - index
+                  }
+
+                  onDelete={
+                    refreshRuns
+                  }
+
                 />
 
               )

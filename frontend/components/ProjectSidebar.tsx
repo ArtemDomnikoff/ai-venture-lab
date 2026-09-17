@@ -102,13 +102,22 @@ export default function ProjectSidebar() {
 
 
 
+  const [
+    deletingId,
+    setDeletingId,
+  ] = useState<string | null>(
+    null,
+  );
+
+
+
 
 
 
   useEffect(
     () => {
 
-      async function load() {
+      async function loadProjects() {
 
         try {
 
@@ -124,10 +133,13 @@ export default function ProjectSidebar() {
                   a,
                   b,
                 ) =>
+
                   new Date(
                     b.created_at,
                   ).getTime()
+
                   -
+
                   new Date(
                     a.created_at,
                   ).getTime()
@@ -139,15 +151,17 @@ export default function ProjectSidebar() {
           );
 
 
-        }
+        } catch(error) {
 
-        catch {
+          console.error(
+            "Failed to load projects",
+            error,
+          );
+
 
           setProjects([]);
 
-        }
-
-        finally {
+        } finally {
 
           setLoading(false);
 
@@ -156,7 +170,7 @@ export default function ProjectSidebar() {
       }
 
 
-      load();
+      loadProjects();
 
 
     },
@@ -174,16 +188,12 @@ export default function ProjectSidebar() {
 
     if(open) {
 
-      // 1. сначала убираем элементы
       setExpanded(false);
 
 
-      // 2. потом сворачиваем ширину
       setTimeout(
         () => {
-
           setOpen(false);
-
         },
         100,
       );
@@ -195,17 +205,12 @@ export default function ProjectSidebar() {
 
 
 
-    // сначала расширяем
     setOpen(true);
 
 
-
-    // элементы появятся после открытия
     setTimeout(
       () => {
-
         setExpanded(true);
-
       },
       300,
     );
@@ -218,17 +223,34 @@ export default function ProjectSidebar() {
 
 
 
+
   async function handleDeleteProject(
     event: React.MouseEvent,
     id: string,
   ) {
+
 
     event.preventDefault();
     event.stopPropagation();
 
 
 
+    if(
+      deletingId
+    ) {
+
+      return;
+
+    }
+
+
+
+    setDeletingId(id);
+
+
+
     try {
+
 
       await deleteProject(
         id,
@@ -259,14 +281,25 @@ export default function ProjectSidebar() {
       }
 
 
-    }
 
-    catch(error) {
+      router.refresh();
+
+
+
+    } catch(error) {
+
 
       console.error(
         "Failed to delete project",
         error,
       );
+
+
+    } finally {
+
+
+      setDeletingId(null);
+
 
     }
 
@@ -288,6 +321,7 @@ export default function ProjectSidebar() {
             .trim();
 
 
+
         if(!value) {
 
           return true;
@@ -295,7 +329,9 @@ export default function ProjectSidebar() {
         }
 
 
+
         return (
+
           project.name
             .toLowerCase()
             .includes(value)
@@ -305,10 +341,12 @@ export default function ProjectSidebar() {
           project.idea
             .toLowerCase()
             .includes(value)
+
         );
 
       },
     );
+
 
 
 
@@ -328,22 +366,17 @@ export default function ProjectSidebar() {
 
         flex-col
 
-
         overflow-hidden
-
 
         border-r
 
         border-[var(--border)]
 
-
         bg-[var(--card)]
-
 
         transition-all
 
         duration-300
-
 
         ${
           open
@@ -356,26 +389,18 @@ export default function ProjectSidebar() {
 
 
 
-
       <div
 
         className="
           flex
-
           h-14
-
           shrink-0
-
           items-center
-
-
           border-b
-
           border-[var(--border)]
         "
 
       >
-
 
         <button
 
@@ -385,27 +410,14 @@ export default function ProjectSidebar() {
 
           className="
             flex
-
             h-14
-
             w-14
-
             shrink-0
-
-
             items-center
-
             justify-center
-
-
             rounded-lg
-
-
             text-xl
-
-
             transition
-
             hover:bg-[var(--background)]
           "
 
@@ -417,26 +429,24 @@ export default function ProjectSidebar() {
 
 
 
-
         {
-          expanded &&
+          expanded
+          &&
+          (
 
-          <span
+            <span
+              className="
+                ml-3
+                whitespace-nowrap
+                font-bold
+              "
+            >
 
-            className="
-              ml-3
+              AI Venture Lab
 
-              whitespace-nowrap
+            </span>
 
-              font-bold
-            "
-
-          >
-
-            AI Venture Lab
-
-          </span>
-
+          )
         }
 
 
@@ -448,378 +458,332 @@ export default function ProjectSidebar() {
 
 
 
-
       <div
 
         className="
           flex-1
-
           overflow-y-auto
-
           p-3
         "
 
       >
 
-
         {
-          expanded &&
+          expanded
+          &&
+          (
 
-          <>
+            <>
 
+              <Link
 
-            <Link
+                href="/"
 
-              href="/"
-
-              className="
-                mb-5
-
-                block
-
-                rounded-xl
-
-                bg-[var(--primary)]
-
-                px-4
-
-                py-3
-
-
-                text-center
-
-
-                text-sm
-
-                font-semibold
-
-
-                text-white
-
-
-                transition
-
-                hover:opacity-90
-              "
-
-            >
-
-              New Project
-
-            </Link>
-
-
-
-
-
-
-
-            <input
-
-              value={
-                search
-              }
-
-              onChange={
-                event =>
-                  setSearch(
-                    event.target.value,
-                  )
-              }
-
-
-              placeholder="Search projects..."
-
-
-              className="
-                mb-4
-
-                w-full
-
-
-                rounded-xl
-
-
-                border
-
-                border-[var(--border)]
-
-
-                bg-[var(--background)]
-
-
-                px-3
-
-                py-2
-
-
-                text-sm
-
-
-                outline-none
-              "
-
-            />
-
-
-
-
-
-
-
-            <div
-
-              className="
-                mb-3
-
-                px-2
-
-                text-xs
-
-                font-semibold
-
-                uppercase
-
-                text-[var(--muted)]
-              "
-
-            >
-
-              Projects
-
-            </div>
-
-
-
-
-
-
-
-            {
-              loading &&
-
-              <div
                 className="
-                  px-2
+                  mb-5
+                  block
+                  rounded-xl
+                  bg-[var(--primary)]
+                  px-4
+                  py-3
+                  text-center
                   text-sm
-                  text-[var(--muted)]
+                  font-semibold
+                  text-white
+                  transition
+                  hover:opacity-90
                 "
+
               >
 
-                Loading...
+                New Project
+
+              </Link>
+
+
+
+
+
+              <input
+
+                value={
+                  search
+                }
+
+                onChange={
+                  event =>
+                    setSearch(
+                      event.target.value,
+                    )
+                }
+
+                placeholder="Search projects..."
+
+                className="
+                  mb-4
+                  w-full
+                  rounded-xl
+                  border
+                  border-[var(--border)]
+                  bg-[var(--background)]
+                  px-3
+                  py-2
+                  text-sm
+                  outline-none
+                "
+
+              />
+
+
+
+
+
+              <div
+
+                className="
+                  mb-3
+                  px-2
+                  text-xs
+                  font-semibold
+                  uppercase
+                  text-[var(--muted)]
+                "
+
+              >
+
+                Projects
 
               </div>
 
-            }
 
 
 
-
-
-
-
-            {
-              !loading &&
-              filteredProjects.length === 0 &&
-
-              <div
-                className="
-                  px-2
-                  text-sm
-                  text-[var(--muted)]
-                "
-              >
-
-                No projects
-
-              </div>
-
-            }
-
-
-
-
-
-
-
-            <div
-              className="
-                space-y-2
-              "
-            >
 
               {
-                filteredProjects.map(
-                  project => (
+                loading
+                &&
+                (
 
-                    <Link
-                      key={
-                        project.id
-                      }
+                  <div
+                    className="
+                      px-2
+                      text-sm
+                      text-[var(--muted)]
+                    "
+                  >
 
-                      href={
-                        `/projects/${project.id}`
-                      }
+                    Loading...
 
-                      className={`
-                        ${projectClass(
-                          pathname.startsWith(
-                            `/projects/${project.id}`,
-                          ),
-                        )}
-              
-                        group
-                      `}
+                  </div>
 
-                    >
-
-
-                      <button
-                        onClick={
-                          event =>
-                            handleDeleteProject(
-                              event,
-                              project.id,
-                            )
-                        }
-
-                        className="
-                          absolute
-
-                          right-2
-                          top-2
-
-
-                          flex
-
-                          h-6
-                          w-6
-
-                          items-center
-                          justify-center
-
-
-                          rounded-md
-
-
-                          text-sm
-
-                          text-muted
-
-                          opacity-0
-
-                          transition-opacity
-
-                          group-hover:opacity-100
-
-                          hover:bg-red-500/10
-
-                          hover:text-red-400
-                        "
-
-                      >
-
-                        ×
-
-                      </button>
-
-
-
-
-
-                      <div
-                        className="
-                          truncate
-
-                          pr-6
-
-                          text-base
-
-                          font-medium
-
-                          text-[var(--foreground)]
-                        "
-                      >
-
-                        {
-                          project.name
-                        }
-
-                      </div>
-
-
-
-
-                      <div
-                        className="
-                          mt-1
-
-                          line-clamp-2
-
-                          text-xs
-
-                          text-[var(--muted)]
-                        "
-                      >
-
-                        {
-                          project.idea
-                        }
-
-                      </div>
-
-
-                    </Link>
-
-                  )
                 )
               }
 
 
-            </div>
+
+
+
+
+              {
+                !loading
+                &&
+                filteredProjects.length === 0
+                &&
+                (
+
+                  <div
+                    className="
+                      px-2
+                      text-sm
+                      text-[var(--muted)]
+                    "
+                  >
+
+                    No projects
+
+                  </div>
+
+                )
+              }
 
 
 
 
 
-
-
-            <div
-              className="
-                mt-6
-
-                border-t
-
-                border-[var(--border)]
-
-                pt-3
-              "
-            >
 
               <div
                 className="
-                  rounded-xl
-
-                  px-3
-
-                  py-2
-
-                  text-xs
-
-                  text-[var(--muted)]
+                  space-y-2
                 "
               >
 
-                Multi-agent AI analysis
+                {
+                  filteredProjects.map(
+                    project => (
+
+                      <div
+
+                        key={
+                          project.id
+                        }
+
+                        className="group relative"
+
+                      >
+
+                        <Link
+
+                          href={
+                            `/projects/${project.id}`
+                          }
+
+                          className={
+                            projectClass(
+                              pathname.startsWith(
+                                `/projects/${project.id}`,
+                              ),
+                            )
+                          }
+
+                        >
+
+                          <div
+
+                            className="
+                              truncate
+                              pr-8
+                              text-base
+                              font-medium
+                              text-[var(--foreground)]
+                            "
+
+                          >
+
+                            {
+                              project.name
+                            }
+
+                          </div>
+
+
+
+
+                          <div
+
+                            className="
+                              mt-1
+                              line-clamp-2
+                              text-xs
+                              text-[var(--muted)]
+                            "
+
+                          >
+
+                            {
+                              project.idea
+                            }
+
+                          </div>
+
+
+                        </Link>
+
+
+
+
+
+                        <button
+
+                          onClick={
+                            event =>
+                              handleDeleteProject(
+                                event,
+                                project.id,
+                              )
+                          }
+
+                          disabled={
+                            deletingId === project.id
+                          }
+
+                          className="
+                            absolute
+                            right-2
+                            top-2
+                            flex
+                            h-6
+                            w-6
+                            items-center
+                            justify-center
+                            rounded-md
+                            text-sm
+                            text-[var(--muted)]
+                            opacity-0
+                            transition-opacity
+                            group-hover:opacity-100
+                            hover:bg-red-500/10
+                            hover:text-red-400
+                            disabled:opacity-50
+                          "
+
+                        >
+
+                          ×
+
+                        </button>
+
+
+                      </div>
+
+                    )
+                  )
+                }
+
 
               </div>
 
-            </div>
 
 
 
-          </>
 
+
+
+
+              <div
+
+                className="
+                  mt-6
+                  border-t
+                  border-[var(--border)]
+                  pt-3
+                "
+
+              >
+
+                <div
+
+                  className="
+                    rounded-xl
+                    px-3
+                    py-2
+                    text-xs
+                    text-[var(--muted)]
+                  "
+
+                >
+
+                  Multi-agent AI analysis
+
+                </div>
+
+
+              </div>
+
+
+
+            </>
+
+          )
         }
 
 
