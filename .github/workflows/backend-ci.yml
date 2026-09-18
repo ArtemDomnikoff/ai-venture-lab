@@ -119,6 +119,15 @@ jobs:
         run: |
 
           uv sync
+          
+
+
+
+      - name: Run lint
+
+        run: |
+
+          uv run ruff check .
 
 
 
