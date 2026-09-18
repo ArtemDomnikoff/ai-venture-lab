@@ -129,10 +129,7 @@ export default function ProjectSidebar() {
           const sorted =
             [...response.items]
               .sort(
-                (
-                  a,
-                  b,
-                ) =>
+                (a, b,) =>
 
                   new Date(
                     b.created_at,
@@ -174,7 +171,7 @@ export default function ProjectSidebar() {
 
 
     },
-    [],
+    [pathname],
   );
 
 
