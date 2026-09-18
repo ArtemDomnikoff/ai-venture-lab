@@ -33,11 +33,10 @@ async def test_delete_project_cascades_runs(
     await session.delete(project)
     await session.commit()
 
-    result = await session.execute(
-        select(Run).where(Run.id == run.id)
-    )
+    result = await session.execute(select(Run).where(Run.id == run.id))
 
     assert result.scalar_one_or_none() is None
+
 
 @pytest.mark.asyncio
 async def test_run_status_is_persisted(
@@ -59,13 +58,12 @@ async def test_run_status_is_persisted(
     session.add(run)
     await session.commit()
 
-    result = await session.execute(
-        select(Run).where(Run.id == run.id)
-    )
+    result = await session.execute(select(Run).where(Run.id == run.id))
 
     saved_run = result.scalar_one()
 
     assert saved_run.status is RunStatus.QUEUED
+
 
 @pytest.mark.asyncio
 async def test_run_requires_existing_project(

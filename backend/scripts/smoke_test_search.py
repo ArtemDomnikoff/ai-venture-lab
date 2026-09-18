@@ -8,10 +8,7 @@ from app.search.client import create_search_service
 async def main() -> None:
     service = create_search_service()
 
-    query = (
-        "AI startup validation software market "
-        "competitors startup founders"
-    )
+    query = "AI startup validation software market competitors startup founders"
 
     print(f"Searching for:\n{query}\n")
 

@@ -15,10 +15,7 @@ from app.graph.state import AnalysisState
 
 def build_graph():
 
-    graph = StateGraph(
-        AnalysisState
-    )
-
+    graph = StateGraph(AnalysisState)
 
     graph.add_node(
         "planner",
@@ -60,7 +57,6 @@ def build_graph():
         judge_node,
     )
 
-
     #
     # START
     #
@@ -69,7 +65,6 @@ def build_graph():
         START,
         "planner",
     )
-
 
     #
     # Planner fan-out
@@ -100,7 +95,6 @@ def build_graph():
         "business",
     )
 
-
     #
     # Fan-in barrier
     #
@@ -116,7 +110,6 @@ def build_graph():
         "skeptic",
     )
 
-
     #
     # Final chain
     #
@@ -126,11 +119,9 @@ def build_graph():
         "judge",
     )
 
-
     graph.add_edge(
         "judge",
         END,
     )
-
 
     return graph.compile()

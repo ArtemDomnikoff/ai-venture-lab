@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from fastapi import FastAPI
 from fastapi.exceptions import RequestValidationError
-from sqlalchemy import text
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
 from app.api.errors import (
     app_error_handler,
@@ -13,7 +13,6 @@ from app.api.errors import (
 from app.api.router import api_router
 from app.core.exceptions import AppError
 from app.db.session import AsyncSessionLocal
-
 
 app = FastAPI(
     title="AI Venture Lab API",

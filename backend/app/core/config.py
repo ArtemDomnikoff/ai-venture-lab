@@ -3,7 +3,6 @@ from pathlib import Path
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
@@ -20,7 +19,7 @@ class Settings(BaseSettings):
     langfuse_secret_key: str | None = None
     langfuse_base_url: str = "https://cloud.langfuse.com"
     langfuse_tracing_environment: str = "development"
-    
+
     postgres_host: str = "127.0.0.1"
     postgres_port: int = 5432
     postgres_db: str = "venture_lab"
@@ -56,9 +55,7 @@ class Settings(BaseSettings):
 
     @property
     def redis_url(self) -> str:
-        return (
-            f"redis://{self.redis_host}:{self.redis_port}"
-        )
+        return f"redis://{self.redis_host}:{self.redis_port}"
 
 
 @lru_cache

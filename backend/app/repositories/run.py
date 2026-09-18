@@ -152,8 +152,8 @@ class RunRepository:
         return run
 
     async def delete(
-            self,
-            run: Run,
+        self,
+        run: Run,
     ) -> None:
         await self.session.delete(
             run,

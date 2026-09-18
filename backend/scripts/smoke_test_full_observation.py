@@ -3,14 +3,13 @@ from __future__ import annotations
 import uuid
 
 from app.observability import (
-    analysis_trace,
     agent_trace,
+    analysis_trace,
     generation_trace,
-    tool_trace,
     get_langfuse,
     is_langfuse_enabled,
+    tool_trace,
 )
-
 
 AGENTS = [
     "planner",
@@ -35,7 +34,6 @@ def fake_generation(
             "tokens": 0,
         },
     ) as generation:
-
         if generation:
             generation.update(
                 output={
@@ -57,7 +55,6 @@ def fake_tavily():
             "provider": "mock",
         },
     ) as tool:
-
         if tool:
             tool.update(
                 output={
@@ -69,39 +66,28 @@ def fake_tavily():
 def main():
 
     if not is_langfuse_enabled():
-        raise RuntimeError(
-            "Langfuse is not configured"
-        )
+        raise RuntimeError("Langfuse is not configured")
 
     langfuse = get_langfuse()
 
     if langfuse is None:
-        raise RuntimeError(
-            "Langfuse unavailable"
-        )
-
+        raise RuntimeError("Langfuse unavailable")
 
     run_id = str(uuid.uuid4())
     project_id = str(uuid.uuid4())
-
 
     with analysis_trace(
         run_id=run_id,
         project_id=project_id,
         idea="Mock startup analysis",
     ):
-
-
         for agent in AGENTS:
-
             with agent_trace(
                 agent_name=agent,
                 run_id=run_id,
                 project_id=project_id,
                 idea="Mock startup analysis",
             ):
-
-
                 if agent in {
                     "researcher",
                     "customer",
@@ -111,22 +97,15 @@ def main():
                 }:
                     fake_tavily()
 
-
                 fake_generation(
                     agent,
                 )
 
-
     langfuse.flush()
 
+    print("Full Langfuse observation smoke test OK")
 
-    print(
-        "Full Langfuse observation smoke test OK"
-    )
-
-    print(
-        f"run_id={run_id}"
-    )
+    print(f"run_id={run_id}")
 
 
 if __name__ == "__main__":

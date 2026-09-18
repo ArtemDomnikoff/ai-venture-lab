@@ -7,7 +7,6 @@ from app.api.deps import get_session
 from app.observability_metrics import RunMetricsService
 from app.schemas.observability import RunMetricsResponse
 
-
 router = APIRouter(
     prefix="/metrics",
     tags=["metrics"],

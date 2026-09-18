@@ -4,16 +4,15 @@ Revision ID: PUT_NEW_REVISION_HERE
 Revises: PUT_PREVIOUS_REVISION_HERE
 """
 
-from typing import Sequence, Union
+from collections.abc import Sequence
 
 from alembic import op
 
-
 # revision identifiers, used by Alembic.
 revision: str = "e02e3b1c91b3"
-down_revision: Union[str, Sequence[str], None] = "02fdfdeed4d8"
-branch_labels: Union[str, Sequence[str], None] = None
-depends_on: Union[str, Sequence[str], None] = None
+down_revision: str | Sequence[str] | None = "02fdfdeed4d8"
+branch_labels: str | Sequence[str] | None = None
+depends_on: str | Sequence[str] | None = None
 
 
 def upgrade() -> None:

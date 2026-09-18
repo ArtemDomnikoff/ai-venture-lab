@@ -181,15 +181,15 @@ export default function RunCard(
         rounded-2xl
 
         border
-        border-[var(--border)]
+        border-border
 
-        bg-[var(--card)]
+        bg-card
 
         p-6
 
         transition
 
-        hover:bg-[var(--background)]
+        hover:bg-background
       "
 
     >
@@ -232,7 +232,7 @@ export default function RunCard(
           text-sm
 
 
-          text-[var(--muted)]
+          text-muted
 
 
           transition
@@ -294,7 +294,7 @@ export default function RunCard(
 
                 font-semibold
 
-                text-[var(--foreground)]
+                text-foreground
               "
             >
 
@@ -310,7 +310,7 @@ export default function RunCard(
 
                 text-sm
 
-                text-[var(--muted)]
+                text-muted
               "
             >
 
@@ -359,7 +359,7 @@ export default function RunCard(
 
                 border
 
-                border-[var(--border)]
+                border-border
 
                 p-4
               "
@@ -369,7 +369,7 @@ export default function RunCard(
                 className="
                   text-sm
 
-                  text-[var(--muted)]
+                  text-muted
                 "
               >
 
@@ -384,7 +384,7 @@ export default function RunCard(
 
                   font-semibold
 
-                  text-[var(--foreground)]
+                  text-foreground
                 "
               >
 
@@ -421,7 +421,7 @@ export default function RunCard(
 
                 border
 
-                border-[var(--danger)]
+                border-danger
 
                 p-4
               "
@@ -431,7 +431,7 @@ export default function RunCard(
                 className="
                   text-sm
 
-                  text-[var(--danger)]
+                  text-danger
                 "
               >
 
@@ -446,7 +446,7 @@ export default function RunCard(
 
                   text-sm
 
-                  text-[var(--foreground)]
+                  text-foreground
                 "
               >
 
@@ -487,7 +487,7 @@ export default function RunCard(
 
                 border-t
 
-                border-[var(--border)]
+                border-border
 
 
                 pt-5
@@ -508,7 +508,7 @@ export default function RunCard(
                   className="
                     text-sm
 
-                    text-[var(--muted)]
+                    text-muted
                   "
                 >
 
@@ -525,7 +525,7 @@ export default function RunCard(
 
                     font-bold
 
-                    text-[var(--foreground)]
+                    text-foreground
                   "
                 >
 
@@ -537,7 +537,7 @@ export default function RunCard(
                     className="
                       text-lg
 
-                      text-[var(--muted)]
+                      text-muted
                     "
                   >
 

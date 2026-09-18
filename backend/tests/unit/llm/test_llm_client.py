@@ -8,21 +8,23 @@ from app.llm.client import create_llm_client
 
 
 def test_create_llm_client_requires_api_key() -> None:
-    with patch(
-        "app.llm.client.get_settings",
-        return_value=type(
-            "Settings",
-            (),
-            {
-                "openai_api_key": None,
-            },
-        )(),
-    ):
-        with pytest.raises(
+    with (
+        patch(
+            "app.llm.client.get_settings",
+            return_value=type(
+                "Settings",
+                (),
+                {
+                    "openai_api_key": None,
+                },
+            )(),
+        ),
+        pytest.raises(
             RuntimeError,
             match="OPENAI_API_KEY is not configured",
-        ):
-            create_llm_client()
+        ),
+    ):
+        create_llm_client()
 
 
 def test_create_llm_client_uses_configured_key() -> None:

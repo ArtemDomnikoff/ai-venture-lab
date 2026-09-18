@@ -136,13 +136,9 @@ class ResultService:
                 continue
 
             if agent_name == "skeptic":
-                confidence = agent_result.get(
-                    "evidence_quality"
-                )
+                confidence = agent_result.get("evidence_quality")
             else:
-                confidence = agent_result.get(
-                    "confidence"
-                )
+                confidence = agent_result.get("confidence")
 
             if not isinstance(confidence, int):
                 continue
@@ -204,17 +200,9 @@ class ResultService:
         strengths = judge.get("strengths", [])
         risks = judge.get("risks", [])
 
-        strength_text = ", ".join(
-            item
-            for item in strengths
-            if isinstance(item, str)
-        )
+        strength_text = ", ".join(item for item in strengths if isinstance(item, str))
 
-        risk_text = ", ".join(
-            item
-            for item in risks
-            if isinstance(item, str)
-        )
+        risk_text = ", ".join(item for item in risks if isinstance(item, str))
 
         parts: list[str] = []
 

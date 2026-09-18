@@ -45,21 +45,23 @@ async def test_observability_contexts_do_not_raise_when_disabled() -> None:
     run_id = str(uuid.uuid4())
     project_id = str(uuid.uuid4())
 
-    with analysis_trace(
-        run_id=run_id,
-        project_id=project_id,
-        idea="Observability test",
-    ):
-        with agent_trace(
+    with (
+        analysis_trace(
+            run_id=run_id,
+            project_id=project_id,
+            idea="Observability test",
+        ),
+        agent_trace(
             agent_name="researcher",
             run_id=run_id,
             project_id=project_id,
             idea="Observability test",
-        ):
-            with tool_trace(
-                tool_name="tavily.search",
-                input_data={
-                    "query": "observability test",
-                },
-            ):
-                pass
+        ),
+        tool_trace(
+            tool_name="tavily.search",
+            input_data={
+                "query": "observability test",
+            },
+        ),
+    ):
+        pass

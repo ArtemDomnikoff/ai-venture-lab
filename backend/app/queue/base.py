@@ -8,5 +8,4 @@ class Queue(Protocol):
     async def enqueue_run(
         self,
         run_id: uuid.UUID,
-    ) -> None:
-        ...
+    ) -> None: ...

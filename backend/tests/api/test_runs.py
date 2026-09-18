@@ -169,8 +169,7 @@ async def test_get_project_runs_with_pagination(
     first_run = first_response.json()
 
     response = await client.get(
-        f"/api/v1/projects/{project_id}/runs"
-        "?page=1&page_size=1",
+        f"/api/v1/projects/{project_id}/runs?page=1&page_size=1",
     )
 
     assert response.status_code == 200
@@ -226,7 +225,5 @@ async def test_create_multiple_runs_returns_conflict_for_active_run(
     data = second_response.json()
 
     assert data["error"]["code"] == "RUN_ALREADY_RUNNING"
-    assert data["error"]["message"] == (
-        "Project already has an active analysis run"
-    )
+    assert data["error"]["message"] == ("Project already has an active analysis run")
     assert data["error"]["details"]["project_id"] == project_id

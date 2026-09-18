@@ -6,9 +6,9 @@ from datetime import UTC, datetime
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from app.api.deps import get_queue, get_session
-from app.main import app
+from app.api.deps import get_session
 from app.domain.enums import RunStatus
+from app.main import app
 from app.models.run import Run
 
 
@@ -138,7 +138,6 @@ async def test_get_missing_run_returns_404(
             requested_run_id,
         ):
             assert requested_run_id == run_id
-            return None
 
     monkeypatch.setattr(
         "app.api.routes.runs.RunService",

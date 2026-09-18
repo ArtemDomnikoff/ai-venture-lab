@@ -8,7 +8,6 @@ import pytest
 from app.domain.enums import RunStatus
 from app.worker.execution import run_analysis
 
-
 NODE_NAMES = {
     "planner",
     "researcher",
@@ -240,10 +239,8 @@ async def test_run_analysis_updates_progress_for_all_nodes() -> None:
         "FakeGraph",
         (),
         {
-            "astream": lambda self, *args, **kwargs: (
-                FakeAsyncStream(
-                    make_updates(),
-                )
+            "astream": lambda self, *args, **kwargs: FakeAsyncStream(
+                make_updates(),
             ),
         },
     )()
@@ -268,16 +265,11 @@ async def test_run_analysis_updates_progress_for_all_nodes() -> None:
     assert result["judge"]["score"] == 80
 
     assert set(run.progress) == NODE_NAMES
-    assert all(
-        status == "completed"
-        for status in run.progress.values()
-    )
+    assert all(status == "completed" for status in run.progress.values())
 
     assert run.current_node is None
 
-    assert len(
-        repository.update_progress_calls
-    ) >= 9
+    assert len(repository.update_progress_calls) >= 9
 
 
 @pytest.mark.asyncio
@@ -306,9 +298,7 @@ async def test_run_analysis_marks_parallel_agents_running_after_planner() -> Non
         "FakeGraph",
         (),
         {
-            "astream": lambda self, *args, **kwargs: (
-                FakeAsyncStream(updates)
-            ),
+            "astream": lambda self, *args, **kwargs: FakeAsyncStream(updates),
         },
     )()
 
@@ -321,14 +311,14 @@ async def test_run_analysis_marks_parallel_agents_running_after_planner() -> Non
             "app.worker.execution.build_graph",
             return_value=fake_graph,
         ),
+        pytest.raises(KeyError),
     ):
-        with pytest.raises(KeyError):
-            await run_analysis(
-                session=session,
-                run_id=run_id,
-                project_id=project_id,
-                idea="AI venture evaluator",
-            )
+        await run_analysis(
+            session=session,
+            run_id=run_id,
+            project_id=project_id,
+            idea="AI venture evaluator",
+        )
 
     planner_progress = None
 
@@ -396,17 +386,17 @@ async def test_run_analysis_marks_running_nodes_failed_on_error() -> None:
             "app.worker.execution.build_graph",
             return_value=FailingGraph(),
         ),
-    ):
-        with pytest.raises(
+        pytest.raises(
             RuntimeError,
             match="graph failed",
-        ):
-            await run_analysis(
-                session=session,
-                run_id=run_id,
-                project_id=project_id,
-                idea="AI venture evaluator",
-            )
+        ),
+    ):
+        await run_analysis(
+            session=session,
+            run_id=run_id,
+            project_id=project_id,
+            idea="AI venture evaluator",
+        )
 
     assert run.progress["researcher"] == "failed"
     assert run.progress["customer"] == "failed"

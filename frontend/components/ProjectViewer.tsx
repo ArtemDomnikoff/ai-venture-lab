@@ -205,8 +205,8 @@ export default function ProjectViewer(
         className="
           rounded-2xl
           border
-          border-[var(--border)]
-          bg-[var(--card)]
+          border-border
+          bg-card
           p-6
           sm:p-8
         "
@@ -235,7 +235,7 @@ export default function ProjectViewer(
               className="
                 text-4xl
                 font-bold
-                text-[var(--foreground)]
+                text-foreground
               "
             >
               {
@@ -249,7 +249,7 @@ export default function ProjectViewer(
               className="
                 mt-4
                 leading-7
-                text-[var(--muted)]
+                text-muted
               "
             >
               {
@@ -273,7 +273,7 @@ export default function ProjectViewer(
             }
             className="
               rounded-xl
-              bg-[var(--primary)]
+              bg-primary
               px-5
               py-3
               font-semibold
@@ -323,7 +323,7 @@ export default function ProjectViewer(
             className="
               text-2xl
               font-bold
-              text-[var(--foreground)]
+              text-foreground
             "
           >
             Analysis history
@@ -334,7 +334,7 @@ export default function ProjectViewer(
           <span
             className="
               text-sm
-              text-[var(--muted)]
+              text-muted
             "
           >
             {
@@ -360,8 +360,8 @@ export default function ProjectViewer(
               className="
                 rounded-2xl
                 border
-                border-[var(--border)]
-                bg-[var(--card)]
+                border-border
+                bg-card
                 p-8
                 text-center
               "
@@ -369,7 +369,7 @@ export default function ProjectViewer(
 
               <p
                 className="
-                  text-[var(--muted)]
+                  text-muted
                 "
               >
                 No analyses yet.

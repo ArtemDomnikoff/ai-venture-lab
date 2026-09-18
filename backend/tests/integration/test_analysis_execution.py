@@ -177,9 +177,7 @@ async def test_run_analysis_returns_json_compatible_result() -> None:
     fake_repository.get_by_id.return_value = fake_run
 
     fake_graph = SimpleNamespace(
-        astream=lambda *args, **kwargs: FakeAsyncIterator(
-            make_fake_updates()
-        )
+        astream=lambda *args, **kwargs: FakeAsyncIterator(make_fake_updates())
     )
 
     with (

@@ -5,7 +5,6 @@ from app.graph.state import AnalysisState
 from app.llm.runner import generate_structured
 from app.observability import agent_trace
 
-
 SYSTEM_PROMPT = """
 You are the Planner node in a multi-agent startup evaluation system.
 

@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import time
 
+from tavily import AsyncTavilyClient
+
 from app.observability import tool_trace
 from app.search.models import SearchResult
-from tavily import AsyncTavilyClient
 
 
 class TavilySearchProvider:
@@ -32,7 +33,6 @@ class TavilySearchProvider:
                 "search_depth": "advanced",
             },
         ) as observation:
-
             response = await self.client.search(
                 query=query,
                 search_depth="advanced",
@@ -84,16 +84,9 @@ class TavilySearchProvider:
                 observation.update(
                     output={
                         "result_count": len(results),
-                        "urls": [
-                            result.url
-                            for result in results
-                        ],
+                        "urls": [result.url for result in results],
                         "duration_ms": round(
-                            (
-                                time.perf_counter()
-                                - started_at
-                            )
-                            * 1000,
+                            (time.perf_counter() - started_at) * 1000,
                             2,
                         ),
                     }

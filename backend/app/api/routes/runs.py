@@ -11,7 +11,6 @@ from app.queue.base import Queue
 from app.schemas.run import RunListResponse, RunResponse
 from app.services.run import RunService
 
-
 projects_router = APIRouter(
     prefix="/projects",
     tags=["runs"],
@@ -107,11 +106,9 @@ async def delete_run(
 
     service = RunService(session)
 
-
     deleted = await service.delete_run(
         run_id,
     )
-
 
     if not deleted:
         raise RunNotFoundError(

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
 from typing import Any
 
 from sqlalchemy import case, func, select
@@ -59,10 +58,7 @@ class RunMetricsService:
 
         result = await self.session.execute(statement)
 
-        counts = {
-            status: 0
-            for status in RunStatus
-        }
+        counts = {status: 0 for status in RunStatus}
 
         for status, count in result.all():
             counts[status] = int(count)
@@ -70,19 +66,16 @@ class RunMetricsService:
         return counts
 
     async def _get_average_duration_ms(self) -> float | None:
-        duration_seconds = (
-            func.extract(
-                "epoch",
-                Run.finished_at - Run.started_at,
-            )
+        duration_seconds = func.extract(
+            "epoch",
+            Run.finished_at - Run.started_at,
         )
 
         statement = select(
             func.avg(
                 case(
                     (
-                        (Run.started_at.is_not(None))
-                        & (Run.finished_at.is_not(None)),
+                        (Run.started_at.is_not(None)) & (Run.finished_at.is_not(None)),
                         duration_seconds,
                     ),
                     else_=None,

@@ -39,10 +39,7 @@ class Run(Base):
             RunStatus,
             name="run_status",
             native_enum=True,
-            values_callable=lambda enum_cls: [
-                member.value
-                for member in enum_cls
-            ],
+            values_callable=lambda enum_cls: [member.value for member in enum_cls],
         ),
         nullable=False,
         default=RunStatus.QUEUED,
@@ -85,7 +82,7 @@ class Run(Base):
         server_default=func.now(),
     )
 
-    project: Mapped["Project"] = relationship(
+    project: Mapped[Project] = relationship(
         back_populates="runs",
     )
 

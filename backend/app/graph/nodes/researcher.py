@@ -10,7 +10,6 @@ from app.llm.runner import generate_structured
 from app.observability import agent_trace
 from app.search.client import create_search_service
 
-
 SYSTEM_PROMPT = """
 You are the Market Research Agent in an AI startup evaluation system.
 
@@ -56,21 +55,14 @@ async def researcher_node(
 
     with agent_trace(
         agent_name="researcher",
-        run_id=str(
-            state.get("run_id", "")
-        ),
-        project_id=str(
-            state.get("project_id", "")
-        ),
+        run_id=str(state.get("run_id", "")),
+        project_id=str(state.get("project_id", "")),
         idea=state["idea"],
         input_data={
-            "question_count": len(
-                plan.market_questions
-            ),
+            "question_count": len(plan.market_questions),
             "market_focus": plan.market_focus,
         },
     ) as observation:
-
         search_service = create_search_service()
 
         query = (
@@ -89,10 +81,7 @@ async def researcher_node(
             search_results,
         )
 
-        questions = "\n".join(
-            f"- {question}"
-            for question in plan.market_questions
-        )
+        questions = "\n".join(f"- {question}" for question in plan.market_questions)
 
         user_prompt = f"""
 Startup idea:
@@ -137,12 +126,8 @@ Use only the supplied research.
         if observation is not None:
             observation.update(
                 output={
-                    "claim_count": len(
-                        result.claims
-                    ),
-                    "evidence_count": len(
-                        result.evidence
-                    ),
+                    "claim_count": len(result.claims),
+                    "evidence_count": len(result.evidence),
                     "confidence": result.confidence,
                 }
             )

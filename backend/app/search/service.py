@@ -21,10 +21,7 @@ class SearchService:
             max_results=max_results,
         )
 
-        normalized = [
-            self._normalize_result(result)
-            for result in results
-        ]
+        normalized = [self._normalize_result(result) for result in results]
 
         unique = self._deduplicate(normalized)
 

@@ -10,7 +10,6 @@ from app.llm.runner import generate_structured
 from app.observability import agent_trace
 from app.search.client import create_search_service
 
-
 SYSTEM_PROMPT = """
 You are the Competitor Agent in a multi-agent startup evaluation system.
 
@@ -51,23 +50,14 @@ async def competitor_node(
 
     with agent_trace(
         agent_name="competitor",
-        run_id=str(
-            state.get("run_id", "")
-        ),
-        project_id=str(
-            state.get("project_id", "")
-        ),
+        run_id=str(state.get("run_id", "")),
+        project_id=str(state.get("project_id", "")),
         idea=state["idea"],
         input_data={
-            "question_count": len(
-                plan.competition_questions
-            ),
-            "competition_focus": (
-                plan.competition_focus
-            ),
+            "question_count": len(plan.competition_questions),
+            "competition_focus": (plan.competition_focus),
         },
     ) as observation:
-
         search_service = create_search_service()
 
         query = (
@@ -88,8 +78,7 @@ async def competitor_node(
         )
 
         questions = "\n".join(
-            f"- {question}"
-            for question in plan.competition_questions
+            f"- {question}" for question in plan.competition_questions
         )
 
         user_prompt = f"""
@@ -135,12 +124,8 @@ Separate evidence-backed findings from assumptions.
         if observation is not None:
             observation.update(
                 output={
-                    "claim_count": len(
-                        result.claims
-                    ),
-                    "evidence_count": len(
-                        result.evidence
-                    ),
+                    "claim_count": len(result.claims),
+                    "evidence_count": len(result.evidence),
                     "confidence": result.confidence,
                 }
             )

@@ -262,8 +262,8 @@ export default function RunViewer(
         className="
           rounded-2xl
           border
-          border-[var(--border)]
-          bg-[var(--card)]
+          border-border
+          bg-card
           p-6
           sm:p-8
         "
@@ -286,7 +286,7 @@ export default function RunViewer(
               className="
                 text-4xl
                 font-bold
-                text-[var(--foreground)]
+                text-foreground
               "
             >
 
@@ -298,7 +298,7 @@ export default function RunViewer(
             <p
               className="
                 mt-2
-                text-[var(--muted)]
+                text-muted
               "
             >
 
@@ -339,8 +339,8 @@ export default function RunViewer(
             className="
               rounded-2xl
               border
-              border-[var(--border)]
-              bg-[var(--card)]
+              border-border
+              bg-card
               p-6
               sm:p-8
             "
@@ -350,7 +350,7 @@ export default function RunViewer(
               className="
                 text-2xl
                 font-bold
-                text-[var(--foreground)]
+                text-foreground
               "
             >
 
@@ -362,7 +362,7 @@ export default function RunViewer(
             <p
               className="
                 mt-2
-                text-[var(--muted)]
+                text-muted
               "
             >
 
@@ -409,8 +409,8 @@ export default function RunViewer(
             className="
               rounded-2xl
               border
-              border-[var(--danger)]
-              bg-[var(--card)]
+              border-danger
+              bg-card
               p-6
             "
           >
@@ -419,7 +419,7 @@ export default function RunViewer(
               className="
                 text-2xl
                 font-bold
-                text-[var(--danger)]
+                text-danger
               "
             >
 
@@ -431,7 +431,7 @@ export default function RunViewer(
             <p
               className="
                 mt-3
-                text-[var(--foreground)]
+                text-foreground
               "
             >
 
@@ -464,8 +464,8 @@ export default function RunViewer(
               gap-8
               rounded-2xl
               border
-              border-[var(--border)]
-              bg-[var(--card)]
+              border-border
+              bg-card
               p-6
               md:grid-cols-3
               sm:p-8
@@ -512,7 +512,7 @@ export default function RunViewer(
                   mt-5
                   text-2xl
                   font-bold
-                  text-[var(--foreground)]
+                  text-foreground
                 "
               >
 
@@ -526,7 +526,7 @@ export default function RunViewer(
                 className="
                   mt-4
                   leading-7
-                  text-[var(--muted)]
+                  text-muted
                 "
               >
 
@@ -564,7 +564,7 @@ export default function RunViewer(
                 mb-5
                 text-2xl
                 font-bold
-                text-[var(--foreground)]
+                text-foreground
               "
             >
 

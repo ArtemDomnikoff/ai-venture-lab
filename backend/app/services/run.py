@@ -109,8 +109,8 @@ class RunService:
         )
 
     async def delete_run(
-            self,
-            run_id: uuid.UUID,
+        self,
+        run_id: uuid.UUID,
     ) -> bool:
 
         run = await self.run_repository.get_by_id(

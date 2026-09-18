@@ -8,6 +8,7 @@ import pytest
 from app.infra.redis import create_redis_client
 from app.queue.redis import RedisQueue
 
+
 @pytest.mark.asyncio
 async def test_enqueue_run() -> None:
     redis = create_redis_client()
@@ -34,6 +35,7 @@ async def test_enqueue_run() -> None:
 
     await redis.delete(queue.queue_name)
     await redis.aclose()
+
 
 @pytest.mark.asyncio
 async def test_dequeue_run() -> None:

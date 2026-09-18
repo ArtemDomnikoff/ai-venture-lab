@@ -124,7 +124,7 @@ export default async function ProjectPage(
 
             border
 
-            bg-[var(--card)]
+            bg-card]
 
             p-6
           "
@@ -184,7 +184,7 @@ export default async function ProjectPage(
 
                   text-center
 
-                  text-[var(--muted)]
+                  text-muted
                 "
               >
 

@@ -15,7 +15,6 @@ from app.logging_config import (
     set_run_context,
 )
 
-
 logger = get_logger(__name__)
 
 
@@ -25,10 +24,7 @@ _langfuse_client: Langfuse | None = None
 def is_langfuse_enabled() -> bool:
     settings = get_settings()
 
-    return bool(
-        settings.langfuse_public_key
-        and settings.langfuse_secret_key
-    )
+    return bool(settings.langfuse_public_key and settings.langfuse_secret_key)
 
 
 def get_langfuse() -> Langfuse | None:
@@ -42,21 +38,13 @@ def get_langfuse() -> Langfuse | None:
 
     settings = get_settings()
 
-    os.environ["LANGFUSE_PUBLIC_KEY"] = (
-        settings.langfuse_public_key
-    )
+    os.environ["LANGFUSE_PUBLIC_KEY"] = settings.langfuse_public_key
 
-    os.environ["LANGFUSE_SECRET_KEY"] = (
-        settings.langfuse_secret_key
-    )
+    os.environ["LANGFUSE_SECRET_KEY"] = settings.langfuse_secret_key
 
-    os.environ["LANGFUSE_BASE_URL"] = (
-        settings.langfuse_base_url
-    )
+    os.environ["LANGFUSE_BASE_URL"] = settings.langfuse_base_url
 
-    os.environ["LANGFUSE_TRACING_ENVIRONMENT"] = (
-        settings.langfuse_tracing_environment
-    )
+    os.environ["LANGFUSE_TRACING_ENVIRONMENT"] = settings.langfuse_tracing_environment
 
     _langfuse_client = Langfuse(
         public_key=settings.langfuse_public_key,
@@ -94,20 +82,20 @@ def analysis_trace(
 
         return
 
-    with langfuse.start_as_current_observation(
-        name="startup-analysis",
-        as_type="chain",
-        input={
-            "idea": idea,
-            "run_id": run_id,
-            "project_id": project_id,
-        },
-        metadata={
-            "application": "ai-venture-lab",
-        },
-    ) as trace:
-
-        with propagate_attributes(
+    with (
+        langfuse.start_as_current_observation(
+            name="startup-analysis",
+            as_type="chain",
+            input={
+                "idea": idea,
+                "run_id": run_id,
+                "project_id": project_id,
+            },
+            metadata={
+                "application": "ai-venture-lab",
+            },
+        ) as trace,
+        propagate_attributes(
             metadata={
                 "run_id": run_id,
                 "project_id": project_id,
@@ -115,42 +103,35 @@ def analysis_trace(
             tags=[
                 "startup-analysis",
             ],
-            environment=(
-                get_settings()
-                .langfuse_tracing_environment
-            ),
-        ):
+            environment=(get_settings().langfuse_tracing_environment),
+        ),
+    ):
+        succeeded = False
 
-            succeeded = False
+        try:
+            yield trace
+            succeeded = True
 
-            try:
-                yield trace
-                succeeded = True
+        except Exception as exc:
+            trace.update(
+                level="ERROR",
+                status_message=str(exc),
+            )
 
-            except Exception as exc:
-                trace.update(
-                    level="ERROR",
-                    status_message=str(exc),
-                )
+            raise
 
-                raise
+        finally:
+            trace.update(
+                output={
+                    "status": ("completed" if succeeded else "failed"),
+                    "duration_ms": _elapsed_ms(
+                        started_at,
+                    ),
+                }
+            )
 
-            finally:
-                trace.update(
-                    output={
-                        "status": (
-                            "completed"
-                            if succeeded
-                            else "failed"
-                        ),
-                        "duration_ms": _elapsed_ms(
-                            started_at,
-                        ),
-                    }
-                )
-
-                langfuse.flush()
-                clear_context(tokens)
+            langfuse.flush()
+            clear_context(tokens)
 
 
 @contextmanager
@@ -200,7 +181,6 @@ def agent_trace(
             "agent_name": agent_name,
         },
     ) as observation:
-
         succeeded = False
 
         try:
@@ -218,11 +198,7 @@ def agent_trace(
         finally:
             observation.update(
                 output={
-                    "status": (
-                        "completed"
-                        if succeeded
-                        else "failed"
-                    ),
+                    "status": ("completed" if succeeded else "failed"),
                     "duration_ms": _elapsed_ms(
                         started_at,
                     ),
@@ -255,7 +231,6 @@ def tool_trace(
             "tool_name": tool_name,
         },
     ) as observation:
-
         succeeded = False
 
         try:
@@ -273,11 +248,7 @@ def tool_trace(
         finally:
             observation.update(
                 output={
-                    "status": (
-                        "completed"
-                        if succeeded
-                        else "failed"
-                    ),
+                    "status": ("completed" if succeeded else "failed"),
                     "duration_ms": _elapsed_ms(
                         started_at,
                     ),
@@ -290,9 +261,6 @@ def _elapsed_ms(
 ) -> float:
 
     return round(
-        (
-            time.perf_counter()
-            - started_at
-        ) * 1000,
+        (time.perf_counter() - started_at) * 1000,
         2,
     )

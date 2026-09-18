@@ -7,7 +7,6 @@ from contextvars import ContextVar, Token
 from datetime import UTC, datetime
 from typing import Any
 
-
 _run_id: ContextVar[str | None] = ContextVar(
     "run_id",
     default=None,
@@ -110,9 +109,7 @@ def set_run_context(
     project_id: str | None = None,
     agent_name: str | None = None,
 ) -> list[tuple[ContextVar[Any], Token[Any]]]:
-    tokens: list[
-        tuple[ContextVar[Any], Token[Any]]
-    ] = []
+    tokens: list[tuple[ContextVar[Any], Token[Any]]] = []
 
     if run_id is not None:
         token = _run_id.set(run_id)
@@ -136,9 +133,7 @@ def set_run_context(
 
 
 def clear_context(
-    tokens: list[
-        tuple[ContextVar[Any], Token[Any]]
-    ],
+    tokens: list[tuple[ContextVar[Any], Token[Any]]],
 ) -> None:
     for context_var, token in reversed(tokens):
         context_var.reset(token)

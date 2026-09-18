@@ -2,7 +2,6 @@ from app.search.models import SearchResult
 
 
 class FakeSearchService:
-
     async def search(
         self,
         query: str,

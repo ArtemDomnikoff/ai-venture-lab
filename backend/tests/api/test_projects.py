@@ -14,10 +14,7 @@ async def test_create_project(
         "/api/v1/projects",
         json={
             "name": "AWS Cost AI",
-            "idea": (
-                "AI assistant for reducing "
-                "unnecessary AWS infrastructure costs."
-            ),
+            "idea": ("AI assistant for reducing unnecessary AWS infrastructure costs."),
         },
     )
 
@@ -28,8 +25,7 @@ async def test_create_project(
     assert uuid.UUID(data["id"])
     assert data["name"] == "AWS Cost AI"
     assert data["idea"] == (
-        "AI assistant for reducing "
-        "unnecessary AWS infrastructure costs."
+        "AI assistant for reducing unnecessary AWS infrastructure costs."
     )
     assert data["status"] == "draft"
     assert "created_at" in data
@@ -85,9 +81,7 @@ async def test_get_projects_with_pagination(
             "/api/v1/projects",
             json={
                 "name": f"Project {index}",
-                "idea": (
-                    f"This is test project idea number {index}."
-                ),
+                "idea": (f"This is test project idea number {index}."),
             },
         )
 
@@ -121,9 +115,7 @@ async def test_get_projects_invalid_pagination(
     data = response.json()
 
     assert data["error"]["code"] == "VALIDATION_ERROR"
-    assert data["error"]["message"] == (
-        "Request validation failed"
-    )
+    assert data["error"]["message"] == ("Request validation failed")
 
 
 @pytest.mark.asyncio
@@ -134,10 +126,7 @@ async def test_get_project(
         "/api/v1/projects",
         json={
             "name": "AWS Cost AI",
-            "idea": (
-                "AI tool for optimizing "
-                "cloud infrastructure costs."
-            ),
+            "idea": ("AI tool for optimizing cloud infrastructure costs."),
         },
     )
 
@@ -186,10 +175,7 @@ async def test_delete_project(
         "/api/v1/projects",
         json={
             "name": "Temporary Project",
-            "idea": (
-                "This project will be deleted "
-                "in the test."
-            ),
+            "idea": ("This project will be deleted in the test."),
         },
     )
 
@@ -231,9 +217,7 @@ async def test_create_project_validation(
     data = response.json()
 
     assert data["error"]["code"] == "VALIDATION_ERROR"
-    assert data["error"]["message"] == (
-        "Request validation failed"
-    )
+    assert data["error"]["message"] == ("Request validation failed")
 
 
 @pytest.mark.asyncio

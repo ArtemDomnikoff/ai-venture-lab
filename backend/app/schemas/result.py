@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import uuid
 from datetime import datetime
-from enum import Enum
+from enum import StrEnum
 
 from pydantic import BaseModel, Field
 
 
-class AnalysisDecision(str, Enum):
+class AnalysisDecision(StrEnum):
     STRONG_OPPORTUNITY = "strong_opportunity"
     PROMISING_BUT_RISKY = "promising_but_risky"
     NEEDS_MORE_RESEARCH = "needs_more_research"
@@ -15,7 +15,7 @@ class AnalysisDecision(str, Enum):
     NOT_RECOMMENDED = "not_recommended"
 
 
-class FindingCategory(str, Enum):
+class FindingCategory(StrEnum):
     MARKET = "market"
     CUSTOMER = "customer"
     COMPETITION = "competition"
