@@ -10,7 +10,6 @@ from app.llm.client import create_llm_client
 from app.llm.usage import LLMUsage
 from app.logging_config import get_logger
 
-
 T = TypeVar(
     "T",
     bound=BaseModel,
@@ -30,11 +29,7 @@ async def generate_structured(
 
     settings = get_settings()
 
-    llm_client = (
-        client
-        or create_llm_client()
-    )
-
+    llm_client = client or create_llm_client()
 
     result, usage = await _execute_generation_with_usage(
         llm_client=llm_client,
@@ -43,7 +38,6 @@ async def generate_structured(
         user_prompt=user_prompt,
         output_model=output_model,
     )
-
 
     logger.info(
         "LLM generation completed",
@@ -54,9 +48,7 @@ async def generate_structured(
         },
     )
 
-
     return result
-
 
 
 async def _execute_generation_with_usage(
@@ -67,7 +59,6 @@ async def _execute_generation_with_usage(
     user_prompt: str,
     output_model: type[T],
 ) -> tuple[T, LLMUsage]:
-
 
     response = await llm_client.responses.parse(
         model=settings.openai_model,
@@ -84,7 +75,6 @@ async def _execute_generation_with_usage(
         text_format=output_model,
     )
 
-
     usage = LLMUsage.from_response_usage(
         getattr(
             response,
@@ -93,31 +83,20 @@ async def _execute_generation_with_usage(
         )
     )
 
-
     for output in response.output:
-
         if output.type != "message":
             continue
 
-
         for content in output.content:
-
             if content.type != "output_text":
                 continue
 
-
             if content.parsed is None:
-                raise RuntimeError(
-                    "LLM returned no structured output"
-                )
-
+                raise RuntimeError("LLM returned no structured output")
 
             return (
                 content.parsed,
                 usage,
             )
 
-
-    raise RuntimeError(
-        "LLM returned no message output"
-    )
+    raise RuntimeError("LLM returned no message output")

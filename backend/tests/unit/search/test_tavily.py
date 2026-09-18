@@ -27,9 +27,7 @@ async def test_tavily_search_provider_maps_response_to_search_results() -> None:
         ]
     }
 
-    with patch(
-        "app.search.tavily.AsyncTavilyClient"
-    ) as mock_client_class:
+    with patch("app.search.tavily.AsyncTavilyClient") as mock_client_class:
         mock_client = mock_client_class.return_value
         mock_client.search = AsyncMock(
             return_value=response,
@@ -94,9 +92,7 @@ async def test_tavily_search_provider_skips_invalid_results() -> None:
         ]
     }
 
-    with patch(
-        "app.search.tavily.AsyncTavilyClient"
-    ) as mock_client_class:
+    with patch("app.search.tavily.AsyncTavilyClient") as mock_client_class:
         mock_client = mock_client_class.return_value
         mock_client.search = AsyncMock(
             return_value=response,
@@ -120,9 +116,7 @@ async def test_tavily_search_provider_passes_search_parameters() -> None:
         "results": [],
     }
 
-    with patch(
-        "app.search.tavily.AsyncTavilyClient"
-    ) as mock_client_class:
+    with patch("app.search.tavily.AsyncTavilyClient") as mock_client_class:
         mock_client = mock_client_class.return_value
         mock_client.search = AsyncMock(
             return_value=response,

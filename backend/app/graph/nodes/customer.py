@@ -10,7 +10,6 @@ from app.llm.runner import generate_structured
 from app.observability import agent_trace
 from app.search.client import create_search_service
 
-
 SYSTEM_PROMPT = """
 You are the Customer Agent in a multi-agent startup evaluation system.
 
@@ -51,21 +50,14 @@ async def customer_node(
 
     with agent_trace(
         agent_name="customer",
-        run_id=str(
-            state.get("run_id", "")
-        ),
-        project_id=str(
-            state.get("project_id", "")
-        ),
+        run_id=str(state.get("run_id", "")),
+        project_id=str(state.get("project_id", "")),
         idea=state["idea"],
         input_data={
-            "question_count": len(
-                plan.customer_questions
-            ),
+            "question_count": len(plan.customer_questions),
             "customer_focus": plan.customer_focus,
         },
     ) as observation:
-
         search_service = create_search_service()
 
         query = (
@@ -84,10 +76,7 @@ async def customer_node(
             search_results,
         )
 
-        questions = "\n".join(
-            f"- {question}"
-            for question in plan.customer_questions
-        )
+        questions = "\n".join(f"- {question}" for question in plan.customer_questions)
 
         user_prompt = f"""
 Startup idea:
@@ -129,12 +118,8 @@ Separate evidence-backed findings from assumptions.
         if observation is not None:
             observation.update(
                 output={
-                    "claim_count": len(
-                        result.claims
-                    ),
-                    "evidence_count": len(
-                        result.evidence
-                    ),
+                    "claim_count": len(result.claims),
+                    "evidence_count": len(result.evidence),
                     "confidence": result.confidence,
                 }
             )

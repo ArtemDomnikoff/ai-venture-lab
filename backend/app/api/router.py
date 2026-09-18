@@ -5,9 +5,10 @@ from app.api.routes.projects import router as projects_router
 from app.api.routes.results import router as results_router
 from app.api.routes.runs import (
     projects_router as project_runs_router,
+)
+from app.api.routes.runs import (
     runs_router,
 )
-
 
 api_router = APIRouter(
     prefix="/api/v1",

@@ -5,9 +5,9 @@ from unittest.mock import AsyncMock, patch
 import pytest
 from httpx import ASGITransport, AsyncClient
 
+from app.api.deps import get_session
 from app.main import app
 from app.observability_metrics import RunMetrics
-from app.api.deps import get_session
 
 
 @pytest.mark.asyncio
@@ -26,14 +26,10 @@ async def test_get_run_metrics_returns_metrics() -> None:
     async def override_get_session():
         yield session
 
-    app.dependency_overrides[
-        get_session
-    ] = override_get_session
+    app.dependency_overrides[get_session] = override_get_session
 
     try:
-        with patch(
-            "app.api.routes.metrics.RunMetricsService"
-        ) as mock_service_class:
+        with patch("app.api.routes.metrics.RunMetricsService") as mock_service_class:
             mock_service = mock_service_class.return_value
             mock_service.get_metrics = AsyncMock(
                 return_value=metrics,
@@ -47,9 +43,7 @@ async def test_get_run_metrics_returns_metrics() -> None:
                 transport=transport,
                 base_url="http://test",
             ) as client:
-                response = await client.get(
-                    "/api/v1/metrics/runs"
-                )
+                response = await client.get("/api/v1/metrics/runs")
 
         assert response.status_code == 200
 
@@ -87,14 +81,10 @@ async def test_get_run_metrics_returns_null_average_for_no_completed_runs() -> N
     async def override_get_session():
         yield session
 
-    app.dependency_overrides[
-        get_session
-    ] = override_get_session
+    app.dependency_overrides[get_session] = override_get_session
 
     try:
-        with patch(
-            "app.api.routes.metrics.RunMetricsService"
-        ) as mock_service_class:
+        with patch("app.api.routes.metrics.RunMetricsService") as mock_service_class:
             mock_service = mock_service_class.return_value
             mock_service.get_metrics = AsyncMock(
                 return_value=metrics,
@@ -108,9 +98,7 @@ async def test_get_run_metrics_returns_null_average_for_no_completed_runs() -> N
                 transport=transport,
                 base_url="http://test",
             ) as client:
-                response = await client.get(
-                    "/api/v1/metrics/runs"
-                )
+                response = await client.get("/api/v1/metrics/runs")
 
         assert response.status_code == 200
 

@@ -8,7 +8,6 @@ from app.graph.graph import build_graph
 from app.observability import analysis_trace
 from app.repositories.run import RunRepository
 
-
 NODE_NAMES = (
     "planner",
     "researcher",
@@ -49,10 +48,7 @@ async def run_analysis(
             f"Run {run_id} not found",
         )
 
-    progress = {
-        node: "waiting"
-        for node in NODE_NAMES
-    }
+    progress = {node: "waiting" for node in NODE_NAMES}
 
     await repository.update_progress(
         run,
@@ -67,7 +63,6 @@ async def run_analysis(
         project_id=str(project_id),
         idea=idea,
     ) as trace:
-
         graph = build_graph()
 
         initial_state = {
@@ -96,7 +91,6 @@ async def run_analysis(
                 stream_mode="updates",
             ):
                 for node_name, node_update in update.items():
-
                     if node_name not in NODE_NAMES:
                         continue
 
@@ -118,15 +112,10 @@ async def run_analysis(
 
                     elif node_name in PARALLEL_NODES:
                         all_parallel_completed = all(
-                            progress[node] == "completed"
-                            for node in PARALLEL_NODES
+                            progress[node] == "completed" for node in PARALLEL_NODES
                         )
 
-                        current_node = (
-                            "skeptic"
-                            if all_parallel_completed
-                            else None
-                        )
+                        current_node = "skeptic" if all_parallel_completed else None
 
                         if all_parallel_completed:
                             progress["skeptic"] = "running"
@@ -149,7 +138,7 @@ async def run_analysis(
 
                     await session.commit()
 
-        except Exception as exc:
+        except Exception:
             for node_name in PARALLEL_NODES:
                 if progress[node_name] == "running":
                     progress[node_name] = "failed"
@@ -192,10 +181,7 @@ async def run_analysis(
             "judge": state["judge"].model_dump(),
         }
 
-        progress = {
-            node: "completed"
-            for node in NODE_NAMES
-        }
+        progress = {node: "completed" for node in NODE_NAMES}
 
         await repository.update_progress(
             run,

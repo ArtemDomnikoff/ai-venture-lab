@@ -1,40 +1,89 @@
 import {
-  apiFetch,
+    apiFetch,
 } from "./api";
 
 import type {
-  Project,
-  ProjectListResponse,
+    Project,
+    ProjectListResponse,
+    Run,
 } from "@/types/api";
 
 
 export function getProjects() {
-  return apiFetch<ProjectListResponse>(
-    "/api/v1/projects",
-  );
+    return apiFetch<ProjectListResponse>(
+        "/projects",
+    );
 }
 
 
 export function getProject(
-  id: string,
+    id: string,
 ) {
-  return apiFetch<Project>(
-    `/api/v1/projects/${id}`,
-  );
+    return apiFetch<Project>(
+        `/projects/${id}`,
+    );
 }
 
 
 export function createProject(
-  data: {
-    name: string;
-    idea: string;
-  },
+    name: string,
+    idea: string,
 ) {
-  return apiFetch<Project>(
-    "/api/v1/projects",
-    {
-      method: "POST",
-      body: JSON.stringify(data),
-    },
-  );
+    return apiFetch<Project>(
+        "/projects",
+        {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                name,
+                idea,
+            }),
+        },
+    );
 }
+
+
+export function updateProject(
+    id: string,
+    idea: string,
+) {
+    return apiFetch<Project>(
+        `/projects/${id}`,
+        {
+            method: "PATCH",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+                idea,
+            }),
+        },
+    );
+}
+
+
+export function deleteProject(
+    id: string,
+) {
+    return apiFetch<void>(
+        `/projects/${id}`,
+        {
+            method: "DELETE",
+        },
+    );
+}
+
+
+export function createRun(
+    projectId: string,
+) {
+    return apiFetch<Run>(
+        `/projects/${projectId}/runs`,
+        {
+            method: "POST",
+        },
+    );
+}
+

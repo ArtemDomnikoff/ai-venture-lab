@@ -1,10 +1,11 @@
 import uuid
 from datetime import datetime
-
 from typing import TYPE_CHECKING
 
-from app.domain.enums import ProjectStatus
 from sqlalchemy import Enum as SQLEnum
+
+from app.domain.enums import ProjectStatus
+
 if TYPE_CHECKING:
     from app.models.run import Run
 from sqlalchemy import DateTime, String, Text, func
@@ -38,9 +39,7 @@ class Project(Base):
             ProjectStatus,
             name="project_status",
             native_enum=True,
-            values_callable=lambda enum_cls: [
-                member.value for member in enum_cls
-            ],
+            values_callable=lambda enum_cls: [member.value for member in enum_cls],
         ),
         nullable=False,
         default=ProjectStatus.DRAFT,

@@ -10,6 +10,7 @@ from app.api.deps import get_queue, get_session
 from app.domain.enums import RunStatus
 from app.main import app
 
+
 class FakeSession:
     pass
 

@@ -20,7 +20,6 @@ from app.queue.redis import RedisQueue
 from app.repositories.run import RunRepository
 from app.worker.execution import run_analysis
 
-
 logger = logging.getLogger(__name__)
 
 
@@ -28,16 +27,12 @@ def parse_run_id(
     message: dict,
 ) -> uuid.UUID:
     if message.get("type") != "run_analysis":
-        raise ValueError(
-            f"Unsupported message type: {message.get('type')!r}"
-        )
+        raise ValueError(f"Unsupported message type: {message.get('type')!r}")
 
     raw_run_id = message.get("run_id")
 
     if not isinstance(raw_run_id, str):
-        raise ValueError(
-            "Message does not contain run_id"
-        )
+        raise TypeError("Message does not contain run_id")
 
     return uuid.UUID(raw_run_id)
 

@@ -62,9 +62,7 @@ class ProjectRepository:
     ) -> tuple[list[Project], int]:
         offset = (page - 1) * page_size
 
-        total_result = await self.session.execute(
-            select(func.count(Project.id))
-        )
+        total_result = await self.session.execute(select(func.count(Project.id)))
 
         total = total_result.scalar_one()
 

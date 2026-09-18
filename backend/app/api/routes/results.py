@@ -12,7 +12,6 @@ from app.schemas.result import (
 )
 from app.services.result import ResultService
 
-
 router = APIRouter(
     prefix="/runs",
     tags=["results"],

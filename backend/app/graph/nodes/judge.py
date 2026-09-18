@@ -5,7 +5,6 @@ from app.graph.state import AnalysisState
 from app.llm.runner import generate_structured
 from app.observability import agent_trace
 
-
 SYSTEM_PROMPT = """
 You are the Judge Agent in a multi-agent startup evaluation system.
 
@@ -56,18 +55,13 @@ async def judge_node(
 
     with agent_trace(
         agent_name="judge",
-        run_id=str(
-            state.get("run_id", "")
-        ),
-        project_id=str(
-            state.get("project_id", "")
-        ),
+        run_id=str(state.get("run_id", "")),
+        project_id=str(state.get("project_id", "")),
         idea=state["idea"],
         input_data={
             "evaluation_stage": "final",
         },
     ) as observation:
-
         user_prompt = f"""
 Startup idea:
 

@@ -5,7 +5,6 @@ from app.graph.state import AnalysisState
 from app.llm.runner import generate_structured
 from app.observability import agent_trace
 
-
 SYSTEM_PROMPT = """
 You are the Skeptic Agent in a multi-agent startup evaluation system.
 
@@ -49,18 +48,13 @@ async def skeptic_node(
 
     with agent_trace(
         agent_name="skeptic",
-        run_id=str(
-            state.get("run_id", "")
-        ),
-        project_id=str(
-            state.get("project_id", "")
-        ),
+        run_id=str(state.get("run_id", "")),
+        project_id=str(state.get("project_id", "")),
         idea=state["idea"],
         input_data={
             "review_targets": 5,
         },
     ) as observation:
-
         user_prompt = f"""
 Startup idea:
 
@@ -114,15 +108,9 @@ Do not create a new startup evaluation.
         if observation is not None:
             observation.update(
                 output={
-                    "risk_count": len(
-                        result.risks
-                    ),
-                    "contradiction_count": len(
-                        result.contradictions
-                    ),
-                    "evidence_quality": (
-                        result.evidence_quality
-                    ),
+                    "risk_count": len(result.risks),
+                    "contradiction_count": len(result.contradictions),
+                    "evidence_quality": (result.evidence_quality),
                 }
             )
 

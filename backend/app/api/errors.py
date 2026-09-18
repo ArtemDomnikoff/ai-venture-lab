@@ -47,10 +47,7 @@ async def validation_error_handler(
     errors = []
 
     for error in exc.errors():
-        location = ".".join(
-            str(part)
-            for part in error.get("loc", [])
-        )
+        location = ".".join(str(part) for part in error.get("loc", []))
 
         errors.append(
             {

@@ -54,9 +54,7 @@ class Evidence(BaseModel):
     )
     source: str = Field(
         min_length=1,
-        description=(
-            "Exact URL of a source returned by the external search provider."
-        ),
+        description=("Exact URL of a source returned by the external search provider."),
     )
     source_type: str = Field(
         min_length=1,

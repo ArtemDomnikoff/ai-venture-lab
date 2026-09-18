@@ -16,7 +16,7 @@ class LLMUsage:
     def from_response_usage(
         cls,
         usage: Any,
-    ) -> "LLMUsage":
+    ) -> LLMUsage:
         if usage is None:
             return cls()
 

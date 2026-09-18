@@ -9,9 +9,7 @@ def create_search_service() -> SearchService:
     settings = get_settings()
 
     if not settings.tavily_api_key:
-        raise RuntimeError(
-            "TAVILY_API_KEY is not configured"
-        )
+        raise RuntimeError("TAVILY_API_KEY is not configured")
 
     provider = TavilySearchProvider(
         api_key=settings.tavily_api_key,

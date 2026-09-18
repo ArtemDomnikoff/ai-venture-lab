@@ -71,9 +71,7 @@ def validate_agent_evidence(
     an LLM cannot introduce an arbitrary URL that was not retrieved.
     """
     allowed_urls = {
-        normalize_url(result.url)
-        for result in search_results
-        if result.url.strip()
+        normalize_url(result.url) for result in search_results if result.url.strip()
     }
 
     validated_evidence = []

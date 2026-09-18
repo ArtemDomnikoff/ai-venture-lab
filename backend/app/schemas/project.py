@@ -62,7 +62,7 @@ class ProjectUpdate(BaseModel):
         return value
 
     @model_validator(mode="after")
-    def validate_not_empty(self) -> "ProjectUpdate":
+    def validate_not_empty(self) -> ProjectUpdate:
         if self.name is None and self.idea is None:
             raise ValueError(
                 "At least one field must be provided",

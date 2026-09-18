@@ -6,7 +6,6 @@ from pathlib import Path
 import psycopg
 import pytest
 import pytest_asyncio
-from app.api.deps import get_queue, get_session
 from httpx import ASGITransport, AsyncClient
 from sqlalchemy import text
 from sqlalchemy.ext.asyncio import (
@@ -14,6 +13,8 @@ from sqlalchemy.ext.asyncio import (
     async_sessionmaker,
     create_async_engine,
 )
+
+from app.api.deps import get_queue
 
 # Test environment must be configured before importing application settings.
 os.environ["APP_ENV"] = "test"
@@ -26,17 +27,11 @@ os.environ["POSTGRES_PASSWORD"] = "postgres"
 BACKEND_DIR = Path(__file__).resolve().parents[1]
 
 TEST_SYNC_DATABASE_URL = (
-    "postgresql://"
-    "postgres:postgres"
-    "@127.0.0.1:15432/"
-    "venture_lab_test"
+    "postgresql://postgres:postgres@127.0.0.1:15432/venture_lab_test"
 )
 
 TEST_ASYNC_DATABASE_URL = (
-    "postgresql+asyncpg://"
-    "postgres:postgres"
-    "@127.0.0.1:15432/"
-    "venture_lab_test"
+    "postgresql+asyncpg://postgres:postgres@127.0.0.1:15432/venture_lab_test"
 )
 
 
@@ -53,11 +48,13 @@ def disable_langfuse_during_tests(monkeypatch: pytest.MonkeyPatch) -> None:
         lambda: None,
     )
 
+
 def reset_test_database() -> None:
     with psycopg.connect(TEST_SYNC_DATABASE_URL) as connection:
         connection.execute("DROP SCHEMA public CASCADE")
         connection.execute("CREATE SCHEMA public")
         connection.commit()
+
 
 class FakeQueue:
     def __init__(self) -> None:
@@ -68,6 +65,7 @@ class FakeQueue:
         run_id: uuid.UUID,
     ) -> None:
         self.enqueued_run_ids.append(run_id)
+
 
 @pytest.fixture
 def fake_queue() -> FakeQueue:
@@ -113,17 +111,14 @@ async def session(engine):
 
     async with engine.begin() as connection:
         await connection.execute(
-            text(
-                "TRUNCATE TABLE runs, projects "
-                "RESTART IDENTITY CASCADE"
-            )
+            text("TRUNCATE TABLE runs, projects RESTART IDENTITY CASCADE")
         )
 
 
 @pytest_asyncio.fixture
 async def client(
-        session: AsyncSession,
-        fake_queue: FakeQueue,
+    session: AsyncSession,
+    fake_queue: FakeQueue,
 ):
     from app.api.deps import get_session
     from app.main import app
@@ -142,4 +137,3 @@ async def client(
         yield client
 
     app.dependency_overrides.clear()
-

@@ -36,9 +36,7 @@ async def test_skeptic_reviews_all_five_agents() -> None:
         contradictions=[
             "Business assumptions are more optimistic than customer evidence."
         ],
-        unsupported_claims=[
-            "Willingness to pay is not directly supported."
-        ],
+        unsupported_claims=["Willingness to pay is not directly supported."],
         risks=[
             "Customer validation is still required.",
         ],

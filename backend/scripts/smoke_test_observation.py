@@ -11,7 +11,6 @@ from app.observability import (
     tool_trace,
 )
 
-
 IDEA = "Smoke test startup idea"
 
 
@@ -28,7 +27,6 @@ def run_agent(
         project_id=project_id,
         idea=IDEA,
     ):
-
         if use_search:
             with tool_trace(
                 tool_name="tavily.search",
@@ -37,7 +35,6 @@ def run_agent(
                     "max_results": 5,
                 },
             ) as tool:
-
                 if tool is not None:
                     tool.update(
                         output={
@@ -53,7 +50,6 @@ def run_agent(
                 "agent": name,
             },
         ) as generation:
-
             if generation is not None:
                 generation.update(
                     output={
@@ -65,33 +61,24 @@ def run_agent(
 
 def main() -> None:
     if not is_langfuse_enabled():
-        raise RuntimeError(
-            "Langfuse is not configured"
-        )
+        raise RuntimeError("Langfuse is not configured")
 
     langfuse = get_langfuse()
 
     if langfuse is None:
-        raise RuntimeError(
-            "Langfuse client was not created"
-        )
+        raise RuntimeError("Langfuse client was not created")
 
     if not langfuse.auth_check():
-        raise RuntimeError(
-            "Langfuse authentication failed"
-        )
-
+        raise RuntimeError("Langfuse authentication failed")
 
     run_id = str(uuid.uuid4())
     project_id = str(uuid.uuid4())
-
 
     with analysis_trace(
         run_id=run_id,
         project_id=project_id,
         idea=IDEA,
     ):
-
         #
         # Planner
         #
@@ -100,7 +87,6 @@ def main() -> None:
             run_id=run_id,
             project_id=project_id,
         )
-
 
         #
         # Five parallel branches
@@ -146,7 +132,6 @@ def main() -> None:
             use_search=True,
         )
 
-
         #
         # Final aggregation
         #
@@ -163,17 +148,11 @@ def main() -> None:
             project_id=project_id,
         )
 
-
     langfuse.flush()
 
+    print("Langfuse observation smoke test: OK")
 
-    print(
-        "Langfuse observation smoke test: OK"
-    )
-
-    print(
-        f"run_id: {run_id}"
-    )
+    print(f"run_id: {run_id}")
 
     print(
         """
