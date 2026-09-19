@@ -21,44 +21,64 @@ from app.schemas.result import (
 
 
 class ResultService:
-    def __init__(self, session: AsyncSession) -> None:
+    def __init__(
+        self,
+        session: AsyncSession,
+    ) -> None:
         self.session = session
         self.repository = RunRepository(session)
 
     async def get_result(
         self,
         run_id: uuid.UUID,
+        *,
+        user_id: uuid.UUID,
     ) -> AnalysisResultResponse:
-        run = await self.repository.get_by_id(run_id)
+        run = await self.repository.get_by_id(
+            run_id,
+            user_id=user_id,
+        )
 
         if run is None:
-            raise RunNotFoundError(str(run_id))
+            raise RunNotFoundError(
+                str(run_id),
+            )
 
         self._ensure_result_available(run)
 
         result = run.result
 
         if not isinstance(result, dict):
-            raise ResultNotFoundError(str(run_id))
+            raise ResultNotFoundError(
+                str(run_id),
+            )
 
         judge = result.get("judge")
 
         if not isinstance(judge, dict):
-            raise ResultNotFoundError(str(run_id))
+            raise ResultNotFoundError(
+                str(run_id),
+            )
 
         raw_score = judge.get("score")
         raw_decision = judge.get("decision")
 
         if not isinstance(raw_score, int):
-            raise ResultNotFoundError(str(run_id))
+            raise ResultNotFoundError(
+                str(run_id),
+            )
 
         if not isinstance(raw_decision, str):
-            raise ResultNotFoundError(str(run_id))
+            raise ResultNotFoundError(
+                str(run_id),
+            )
 
         try:
             decision = AnalysisDecision(raw_decision)
         except ValueError as exc:
-            raise ResultNotFoundError(str(run_id)) from exc
+            raise ResultNotFoundError(
+                str(run_id),
+            ) from exc
 
         summary = self._build_summary(
             result=result,
@@ -76,18 +96,27 @@ class ResultService:
     async def get_findings(
         self,
         run_id: uuid.UUID,
+        *,
+        user_id: uuid.UUID,
     ) -> list[FindingResponse]:
-        run = await self.repository.get_by_id(run_id)
+        run = await self.repository.get_by_id(
+            run_id,
+            user_id=user_id,
+        )
 
         if run is None:
-            raise RunNotFoundError(str(run_id))
+            raise RunNotFoundError(
+                str(run_id),
+            )
 
         self._ensure_result_available(run)
 
         result = run.result
 
         if not isinstance(result, dict):
-            raise ResultNotFoundError(str(run_id))
+            raise ResultNotFoundError(
+                str(run_id),
+            )
 
         findings: list[FindingResponse] = []
 
@@ -159,7 +188,9 @@ class ResultService:
             )
 
         if not findings:
-            raise ResultNotFoundError(str(run_id))
+            raise ResultNotFoundError(
+                str(run_id),
+            )
 
         return findings
 
@@ -181,7 +212,9 @@ class ResultService:
             )
 
         if run.status is not RunStatus.COMPLETED:
-            raise ResultNotFoundError(str(run.id))
+            raise ResultNotFoundError(
+                str(run.id),
+            )
 
     @staticmethod
     def _build_summary(
@@ -200,17 +233,25 @@ class ResultService:
         strengths = judge.get("strengths", [])
         risks = judge.get("risks", [])
 
-        strength_text = ", ".join(item for item in strengths if isinstance(item, str))
+        strength_text = ", ".join(
+            item for item in strengths if isinstance(item, str)
+        )
 
-        risk_text = ", ".join(item for item in risks if isinstance(item, str))
+        risk_text = ", ".join(
+            item for item in risks if isinstance(item, str)
+        )
 
         parts: list[str] = []
 
         if strength_text:
-            parts.append(f"Strengths: {strength_text}")
+            parts.append(
+                f"Strengths: {strength_text}",
+            )
 
         if risk_text:
-            parts.append(f"Risks: {risk_text}")
+            parts.append(
+                f"Risks: {risk_text}",
+            )
 
         if parts:
             return " ".join(parts)

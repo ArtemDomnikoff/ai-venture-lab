@@ -1,18 +1,20 @@
+from __future__ import annotations
+
 import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
+from sqlalchemy import DateTime, ForeignKey, String, Text, func
 from sqlalchemy import Enum as SQLEnum
-
-from app.domain.enums import ProjectStatus
-
-if TYPE_CHECKING:
-    from app.models.run import Run
-from sqlalchemy import DateTime, String, Text, func
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
+from app.domain.enums import ProjectStatus
+
+if TYPE_CHECKING:
+    from app.models.run import Run
+    from app.models.user import User
 
 
 class Project(Base):
@@ -22,6 +24,15 @@ class Project(Base):
         UUID(as_uuid=True),
         primary_key=True,
         default=uuid.uuid4,
+    )
+
+    user_id: Mapped[uuid.UUID | None] = mapped_column(
+        ForeignKey(
+            "users.id",
+            ondelete="CASCADE",
+        ),
+        nullable=True,
+        index=True,
     )
 
     name: Mapped[str] = mapped_column(
@@ -58,7 +69,11 @@ class Project(Base):
         nullable=False,
     )
 
-    runs: Mapped[list["Run"]] = relationship(
+    user: Mapped[User | None] = relationship(
+        back_populates="projects",
+    )
+
+    runs: Mapped[list[Run]] = relationship(
         back_populates="project",
         cascade="all, delete-orphan",
     )

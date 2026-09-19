@@ -1,5 +1,6 @@
 from fastapi import APIRouter
 
+from app.api.routes.auth import router as auth_router
 from app.api.routes.metrics import router as metrics_router
 from app.api.routes.projects import router as projects_router
 from app.api.routes.results import router as results_router
@@ -29,6 +30,10 @@ api_router.include_router(
 
 api_router.include_router(
     results_router,
+)
+
+api_router.include_router(
+    auth_router,
 )
 
 api_router.include_router(

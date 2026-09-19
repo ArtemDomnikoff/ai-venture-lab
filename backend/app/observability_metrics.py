@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 from dataclasses import dataclass
 from typing import Any
 
@@ -7,6 +8,7 @@ from sqlalchemy import case, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.domain.enums import RunStatus
+from app.models.project import Project
 from app.models.run import Run
 
 
@@ -37,9 +39,20 @@ class RunMetricsService:
     ) -> None:
         self.session = session
 
-    async def get_metrics(self) -> RunMetrics:
-        status_counts = await self._get_status_counts()
-        average_duration_ms = await self._get_average_duration_ms()
+    async def get_metrics(
+        self,
+        *,
+        user_id: uuid.UUID | None = None,
+    ) -> RunMetrics:
+        status_counts = await self._get_status_counts(
+            user_id=user_id,
+        )
+
+        average_duration_ms = (
+            await self._get_average_duration_ms(
+                user_id=user_id,
+            )
+        )
 
         return RunMetrics(
             total_runs=sum(status_counts.values()),
@@ -50,22 +63,51 @@ class RunMetricsService:
             average_duration_ms=average_duration_ms,
         )
 
-    async def _get_status_counts(self) -> dict[RunStatus, int]:
+    async def _get_status_counts(
+        self,
+        *,
+        user_id: uuid.UUID | None,
+    ) -> dict[RunStatus, int]:
         statement = select(
             Run.status,
             func.count(Run.id),
-        ).group_by(Run.status)
+        )
 
-        result = await self.session.execute(statement)
+        if user_id is not None:
+            statement = (
+                statement
+                .join(
+                    Project,
+                    Project.id == Run.project_id,
+                )
+                .where(
+                    Project.user_id == user_id,
+                )
+            )
 
-        counts = {status: 0 for status in RunStatus}
+        statement = statement.group_by(
+            Run.status,
+        )
 
-        for status, count in result.all():
-            counts[status] = int(count)
+        result = await self.session.execute(
+            statement,
+        )
+
+        counts = {
+            status: 0
+            for status in RunStatus
+        }
+
+        for run_status, count in result.all():
+            counts[run_status] = int(count)
 
         return counts
 
-    async def _get_average_duration_ms(self) -> float | None:
+    async def _get_average_duration_ms(
+        self,
+        *,
+        user_id: uuid.UUID | None,
+    ) -> float | None:
         duration_seconds = func.extract(
             "epoch",
             Run.finished_at - Run.started_at,
@@ -75,7 +117,8 @@ class RunMetricsService:
             func.avg(
                 case(
                     (
-                        (Run.started_at.is_not(None)) & (Run.finished_at.is_not(None)),
+                        (Run.started_at.is_not(None))
+                        & (Run.finished_at.is_not(None)),
                         duration_seconds,
                     ),
                     else_=None,
@@ -83,9 +126,26 @@ class RunMetricsService:
             )
         )
 
-        result = await self.session.execute(statement)
+        if user_id is not None:
+            statement = (
+                statement
+                .select_from(Run)
+                .join(
+                    Project,
+                    Project.id == Run.project_id,
+                )
+                .where(
+                    Project.user_id == user_id,
+                )
+            )
 
-        average_seconds = result.scalar_one_or_none()
+        result = await self.session.execute(
+            statement,
+        )
+
+        average_seconds = (
+            result.scalar_one_or_none()
+        )
 
         if average_seconds is None:
             return None

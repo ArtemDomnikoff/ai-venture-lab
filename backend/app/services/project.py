@@ -13,15 +13,18 @@ class ProjectService:
     def __init__(
         self,
         session: AsyncSession,
-    ):
+    ) -> None:
         self.session = session
         self.repository = ProjectRepository(session)
 
     async def create_project(
         self,
         data: ProjectCreate,
+        *,
+        user_id: uuid.UUID,
     ) -> Project:
         project = await self.repository.create(
+            user_id=user_id,
             name=data.name,
             idea=data.idea,
         )
@@ -33,18 +36,23 @@ class ProjectService:
     async def get_project(
         self,
         project_id: uuid.UUID,
+        *,
+        user_id: uuid.UUID,
     ) -> Project | None:
         return await self.repository.get_by_id(
             project_id,
+            user_id=user_id,
         )
 
     async def get_projects(
         self,
         *,
+        user_id: uuid.UUID,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Project], int]:
         return await self.repository.get_page(
+            user_id=user_id,
             page=page,
             page_size=page_size,
         )
@@ -53,9 +61,12 @@ class ProjectService:
         self,
         project_id: uuid.UUID,
         data: ProjectUpdate,
+        *,
+        user_id: uuid.UUID,
     ) -> Project | None:
         project = await self.repository.get_by_id(
             project_id,
+            user_id=user_id,
         )
 
         if project is None:
@@ -74,9 +85,12 @@ class ProjectService:
     async def delete_project(
         self,
         project_id: uuid.UUID,
+        *,
+        user_id: uuid.UUID,
     ) -> bool:
         project = await self.repository.get_by_id(
             project_id,
+            user_id=user_id,
         )
 
         if project is None:

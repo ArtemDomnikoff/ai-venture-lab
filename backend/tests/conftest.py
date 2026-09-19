@@ -14,7 +14,9 @@ from sqlalchemy.ext.asyncio import (
     create_async_engine,
 )
 
-from app.api.deps import get_queue
+from app.api.deps import get_current_user, get_queue
+from app.models.user import User
+from app.security.password import hash_password
 
 # Test environment must be configured before importing application settings.
 os.environ["APP_ENV"] = "test"
@@ -36,13 +38,9 @@ TEST_ASYNC_DATABASE_URL = (
 
 
 @pytest.fixture(autouse=True)
-def disable_langfuse_during_tests(monkeypatch: pytest.MonkeyPatch) -> None:
-    """
-    Prevent tests from sending traces to Langfuse.
-
-    Production and observability smoke tests are unaffected.
-    """
-
+def disable_langfuse_during_tests(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     monkeypatch.setattr(
         "app.observability.get_langfuse",
         lambda: None,
@@ -111,12 +109,69 @@ async def session(engine):
 
     async with engine.begin() as connection:
         await connection.execute(
-            text("TRUNCATE TABLE runs, projects RESTART IDENTITY CASCADE")
+            text(
+                """
+                TRUNCATE TABLE
+                    user_sessions,
+                    users,
+                    runs,
+                    projects
+                RESTART IDENTITY CASCADE
+                """
+            )
         )
 
 
 @pytest_asyncio.fixture
+async def test_user(
+    session: AsyncSession,
+) -> User:
+    user = User(
+        email="test@example.com",
+        password_hash=hash_password("TestPassword123!"),
+        free_runs_remaining=3,
+    )
+
+    session.add(user)
+
+    await session.commit()
+    await session.refresh(user)
+
+    return user
+
+
+@pytest_asyncio.fixture
 async def client(
+    session: AsyncSession,
+    fake_queue: FakeQueue,
+    test_user: User,
+):
+    from app.api.deps import get_session
+    from app.main import app
+
+    async def override_get_session():
+        yield session
+
+    async def override_get_current_user() -> User:
+        return test_user
+
+    app.dependency_overrides[get_session] = override_get_session
+    app.dependency_overrides[get_queue] = lambda: fake_queue
+    app.dependency_overrides[get_current_user] = override_get_current_user
+
+    transport = ASGITransport(app=app)
+
+    async with AsyncClient(
+        transport=transport,
+        base_url="http://test",
+    ) as client:
+        yield client
+
+    app.dependency_overrides.clear()
+
+
+@pytest_asyncio.fixture
+async def anonymous_client(
     session: AsyncSession,
     fake_queue: FakeQueue,
 ):
@@ -128,6 +183,7 @@ async def client(
 
     app.dependency_overrides[get_session] = override_get_session
     app.dependency_overrides[get_queue] = lambda: fake_queue
+
     transport = ASGITransport(app=app)
 
     async with AsyncClient(

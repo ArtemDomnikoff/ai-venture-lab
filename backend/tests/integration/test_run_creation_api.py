@@ -2,11 +2,17 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
+from types import SimpleNamespace
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from app.api.deps import get_queue, get_session
+from app.api.deps import (
+    get_current_user,
+    get_queue,
+    get_rate_limiter,
+    get_session,
+)
 from app.domain.enums import RunStatus
 from app.main import app
 
@@ -54,19 +60,36 @@ class FakeQueue:
         self.enqueued_run_ids.append(run_id)
 
 
+class FakeRateLimiter:
+    async def enforce(
+        self,
+        *,
+        key: str,
+        limit: int,
+        window_seconds: int,
+    ) -> None:
+        return None
+
+
 @pytest.mark.asyncio
 async def test_create_run_creates_queued_run_and_enqueues_it(
     monkeypatch,
 ) -> None:
     project_id = uuid.uuid4()
     run_id = uuid.uuid4()
+    user_id = uuid.uuid4()
 
     fake_session = FakeSession()
     fake_queue = FakeQueue()
+    fake_rate_limiter = FakeRateLimiter()
 
     fake_run = FakeRun(
         run_id=run_id,
         project_id=project_id,
+    )
+
+    fake_user = SimpleNamespace(
+        id=user_id,
     )
 
     class FakeRunService:
@@ -81,8 +104,15 @@ async def test_create_run_creates_queued_run_and_enqueues_it(
         async def create_run(
             self,
             requested_project_id,
+            *,
+            user_id,
         ):
-            assert requested_project_id == project_id
+            assert (
+                requested_project_id
+                == project_id
+            )
+
+            assert user_id == user_id
 
             await fake_queue.enqueue_run(
                 fake_run.id,
@@ -101,8 +131,27 @@ async def test_create_run_creates_queued_run_and_enqueues_it(
     async def override_queue():
         return fake_queue
 
-    app.dependency_overrides[get_session] = override_session
-    app.dependency_overrides[get_queue] = override_queue
+    async def override_rate_limiter():
+        return fake_rate_limiter
+
+    async def override_current_user():
+        return fake_user
+
+    app.dependency_overrides[
+        get_session
+    ] = override_session
+
+    app.dependency_overrides[
+        get_queue
+    ] = override_queue
+
+    app.dependency_overrides[
+        get_rate_limiter
+    ] = override_rate_limiter
+
+    app.dependency_overrides[
+        get_current_user
+    ] = override_current_user
 
     try:
         async with AsyncClient(

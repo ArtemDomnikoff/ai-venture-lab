@@ -1,8 +1,14 @@
+export interface User {
+  id: string;
+  email: string;
+  free_runs_remaining: number;
+  created_at: string;
+}
+
 export type ProjectStatus =
   | "draft"
   | "active"
   | "archived";
-
 
 export type RunStatus =
   | "queued"
@@ -10,7 +16,6 @@ export type RunStatus =
   | "completed"
   | "failed"
   | "cancelled";
-
 
 export interface Project {
   id: string;
@@ -21,7 +26,6 @@ export interface Project {
   updated_at: string;
 }
 
-
 export interface ProjectListResponse {
   items: Project[];
   total: number;
@@ -29,16 +33,12 @@ export interface ProjectListResponse {
   page_size: number;
 }
 
-
 export interface Run {
   id: string;
   project_id: string;
   status: RunStatus;
 
-  progress: Record<
-    string,
-    string
-  >;
+  progress: Record<string, string>;
 
   current_node: string | null;
 
@@ -50,14 +50,12 @@ export interface Run {
   created_at: string;
 }
 
-
 export interface RunListResponse {
   items: Run[];
   total: number;
   page: number;
   page_size: number;
 }
-
 
 export interface Evidence {
   claim: string;
@@ -66,7 +64,6 @@ export interface Evidence {
   confidence: number;
   source_type?: string;
 }
-
 
 export interface AgentReport {
   summary?: string;
@@ -94,7 +91,6 @@ export interface AgentReport {
   [key: string]: unknown;
 }
 
-
 export interface Metrics {
   total_runs: number;
   queued_runs: number;
@@ -111,7 +107,6 @@ export type AnalysisDecision =
   | "weak_opportunity"
   | "not_recommended";
 
-
 export type FindingCategory =
   | "market"
   | "customer"
@@ -120,28 +115,18 @@ export type FindingCategory =
   | "business"
   | "skeptic";
 
-
 export interface AnalysisResult {
   run_id: string;
-
   score: number;
-
   decision: AnalysisDecision;
-
   summary: string;
-
   created_at: string;
 }
 
-
 export interface Finding {
   id: string;
-
   category: FindingCategory;
-
   title: string;
-
   summary: string;
-
   confidence: number;
 }

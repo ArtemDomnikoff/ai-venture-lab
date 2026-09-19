@@ -1,5 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
@@ -9,6 +10,17 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 class Settings(BaseSettings):
     app_name: str = "AI Venture Lab"
     app_env: str = "development"
+
+    auth_session_days: int = 30
+    auth_cookie_name: str = "venture_lab_session"
+    auth_cookie_secure: bool = False
+    auth_cookie_samesite: Literal[
+        "lax",
+        "strict",
+        "none",
+    ] = "lax"
+
+    cors_origins: str = "http://localhost:3000"
 
     openai_api_key: str | None = None
     openai_model: str = "gpt-4o-mini"

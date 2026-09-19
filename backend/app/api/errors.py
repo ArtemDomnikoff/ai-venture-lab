@@ -32,11 +32,30 @@ async def app_error_handler(
     request: Request,
     exc: AppError,
 ) -> JSONResponse:
-    return _error_response(
+    headers: dict[str, str] = {}
+
+    retry_after = exc.details.get(
+        "retry_after",
+    )
+
+    if exc.status_code == 429 and isinstance(
+        retry_after,
+        int,
+    ):
+        headers["Retry-After"] = str(
+            retry_after,
+        )
+
+    return JSONResponse(
         status_code=exc.status_code,
-        code=exc.code,
-        message=exc.message,
-        details=exc.details,
+        headers=headers,
+        content={
+            "error": {
+                "code": exc.code,
+                "message": exc.message,
+                "details": exc.details,
+            }
+        },
     )
 
 

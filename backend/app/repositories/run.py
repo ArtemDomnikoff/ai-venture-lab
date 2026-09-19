@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from app.domain.enums import RunStatus
+from app.models.project import Project
 from app.models.run import Run
 
 
@@ -39,8 +40,10 @@ class RunRepository:
     async def get_by_id(
         self,
         run_id: uuid.UUID,
+        *,
+        user_id: uuid.UUID | None = None,
     ) -> Run | None:
-        result = await self.session.execute(
+        statement = (
             select(Run)
             .options(
                 selectinload(Run.project),
@@ -49,6 +52,19 @@ class RunRepository:
                 Run.id == run_id,
             )
         )
+
+        if user_id is not None:
+            statement = (
+                statement.join(
+                    Project,
+                    Project.id == Run.project_id,
+                )
+                .where(
+                    Project.user_id == user_id,
+                )
+            )
+
+        result = await self.session.execute(statement)
 
         return result.scalar_one_or_none()
 
@@ -155,8 +171,6 @@ class RunRepository:
         self,
         run: Run,
     ) -> None:
-        await self.session.delete(
-            run,
-        )
+        await self.session.delete(run)
 
         await self.session.flush()

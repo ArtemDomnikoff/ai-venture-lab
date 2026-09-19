@@ -2,8 +2,9 @@
 
 import {
   useEffect,
-  useRef,
   useState,
+  useSyncExternalStore,
+  useRef,
 } from "react";
 
 import {
@@ -11,27 +12,118 @@ import {
 } from "next/navigation";
 
 import {
+  ApiError,
+} from "@/lib/api";
+
+import {
   createProject,
   createRun,
 } from "@/lib/projects";
 
+import {
+  useAuth,
+} from "@/components/AuthProvider";
+
+
+const IDEA_DRAFT_KEY =
+  "venture-lab:idea-draft";
+
+
+function subscribeToIdeaDraft(
+  callback: () => void,
+): () => void {
+  if (
+    typeof window === "undefined"
+  ) {
+    return () => {};
+  }
+
+  window.addEventListener(
+    "storage",
+    callback,
+  );
+
+  return () => {
+    window.removeEventListener(
+      "storage",
+      callback,
+    );
+  };
+}
+
+
+function getIdeaDraftSnapshot(): string {
+  if (
+    typeof window === "undefined"
+  ) {
+    return "";
+  }
+
+  try {
+    return (
+      window.sessionStorage.getItem(
+        IDEA_DRAFT_KEY,
+      ) ?? ""
+    );
+  } catch {
+    return "";
+  }
+}
+
+
+function getIdeaDraftServerSnapshot(): string {
+  return "";
+}
+
 
 export default function IdeaForm() {
-
   const router = useRouter();
 
+  const {
+    user,
+    loading: authLoading,
+    refreshUser,
+  } = useAuth();
 
-  const [idea, setIdea] = useState("");
-  const [loading, setLoading] = useState(false);
+  const storedDraft =
+    useSyncExternalStore(
+      subscribeToIdeaDraft,
+      getIdeaDraftSnapshot,
+      getIdeaDraftServerSnapshot,
+    );
 
+  const [
+    idea,
+    setIdea,
+  ] = useState("");
+
+  const [
+    hasEdited,
+    setHasEdited,
+  ] = useState(false);
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(false);
+
+  const [
+    error,
+    setError,
+  ] = useState<string | null>(null);
 
   const textareaRef =
     useRef<HTMLTextAreaElement>(null);
 
+  const currentIdea =
+    hasEdited
+      ? idea
+      : storedDraft;
 
 
   useEffect(() => {
-    const textarea = textareaRef.current;
+    const textarea =
+      textareaRef.current;
 
     if (!textarea) {
       return;
@@ -39,193 +131,397 @@ export default function IdeaForm() {
 
     textarea.style.height = "auto";
 
-    const maxHeight = 160; // примерно 4 строки
+    const maxHeight = 160;
 
-    if (textarea.scrollHeight <= maxHeight) {
+    if (
+      textarea.scrollHeight <= maxHeight
+    ) {
       textarea.style.height =
         `${textarea.scrollHeight}px`;
 
-      textarea.style.overflowY = "hidden";
+      textarea.style.overflowY =
+        "hidden";
     } else {
       textarea.style.height =
         `${maxHeight}px`;
 
-      textarea.style.overflowY = "auto";
+      textarea.style.overflowY =
+        "auto";
     }
-
-  }, [idea]);
-
+  }, [currentIdea]);
 
 
+  function handleIdeaChange(
+    value: string,
+  ) {
+    setHasEdited(true);
+    setIdea(value);
+    setError(null);
+  }
 
 
-  async function submit() {
-
-    if (!idea.trim()) {
+  function saveDraft() {
+    if (!currentIdea.trim()) {
       return;
     }
 
+    try {
+      window.sessionStorage.setItem(
+        IDEA_DRAFT_KEY,
+        currentIdea,
+      );
+    } catch {
+      // Session storage may be unavailable.
+    }
+  }
 
+
+  function clearDraft() {
+    try {
+      window.sessionStorage.removeItem(
+        IDEA_DRAFT_KEY,
+      );
+    } catch {
+      // Session storage may be unavailable.
+    }
+  }
+
+
+  function goToAuth(
+    path: "login" | "register",
+  ) {
+    saveDraft();
+
+    const nextPath =
+      encodeURIComponent("/");
+
+    router.push(
+      `/${path}?next=${nextPath}`,
+    );
+  }
+
+
+  async function submit() {
+    if (!user) {
+      goToAuth("login");
+      return;
+    }
+
+    if (!currentIdea.trim()) {
+      return;
+    }
+
+    if (
+      user.free_runs_remaining <= 0
+    ) {
+      setError(
+        "You have used all free analyses.",
+      );
+
+      return;
+    }
+
+    setError(null);
     setLoading(true);
 
-
     try {
-
       const project =
         await createProject(
           "New Venture Analysis",
-          idea,
+          currentIdea.trim(),
         );
-
 
       const run =
         await createRun(
           project.id,
         );
 
+      clearDraft();
+
+      await refreshUser();
 
       router.push(
         `/projects/${project.id}/runs/${run.id}`,
       );
+    } catch (error) {
+      if (
+        error instanceof ApiError
+      ) {
+        if (
+          error.status === 401
+        ) {
+          router.replace(
+            `/login?next=/`,
+          );
 
+          return;
+        }
 
-    }
-    finally {
-
+        if (
+          error.code ===
+          "FREE_RUNS_EXHAUSTED"
+        ) {
+          setError(
+            "You have used all free analyses.",
+          );
+        } else if (
+          error.code ===
+          "RATE_LIMIT_EXCEEDED"
+        ) {
+          setError(
+            "Too many analysis requests. Please try again later.",
+          );
+        } else {
+          setError(
+            error.message,
+          );
+        }
+      } else {
+        setError(
+          "Failed to start analysis.",
+        );
+      }
+    } finally {
       setLoading(false);
-
     }
-
   }
 
 
+  if (authLoading) {
+    return (
+      <div
+        className="
+          w-full
+          max-w-2xl
+        "
+      >
+        <div
+          className="
+            h-12
+            w-full
+            animate-pulse
+            rounded-2xl
+            border
+            border-[var(--border)]
+            bg-[var(--card)]
+          "
+        />
 
+        <div
+          className="
+            mt-4
+            h-14
+            w-full
+            animate-pulse
+            rounded-2xl
+            bg-[var(--card)]
+          "
+        />
+      </div>
+    );
+  }
 
 
   return (
-
     <div
       className="
         w-full
         max-w-2xl
       "
     >
-
-
       <textarea
         ref={textareaRef}
-        value={idea}
+        value={currentIdea}
         onChange={(event) =>
-          setIdea(event.target.value)
+          handleIdeaChange(
+            event.target.value,
+          )
         }
         placeholder="Describe your startup idea..."
         rows={1}
+        disabled={
+          loading
+          || (
+            !!user
+            && user.free_runs_remaining <= 0
+          )
+        }
         className="
           min-h-12
           max-h-40
           w-full
-
           resize-none
           overflow-hidden
-
           rounded-2xl
-
           border
           border-[var(--border)]
-
           bg-[var(--card)]
-
           px-5
           py-3
-
           text-xl
           leading-7
-
           text-[var(--foreground)]
-
           placeholder:text-[var(--muted)]
-
           outline-none
-
           transition-all
           duration-200
-
           focus:border-[var(--primary)]
-
           focus:ring-2
           focus:ring-[var(--primary)]
           focus:ring-opacity-30
+          disabled:cursor-not-allowed
+          disabled:opacity-60
         "
       />
 
 
+      {!user ? (
+        <>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={
+              !currentIdea.trim()
+              || loading
+            }
+            className="
+              mt-4
+              flex
+              w-full
+              items-center
+              justify-center
+              gap-2
+              rounded-2xl
+              bg-[var(--primary)]
+              px-6
+              py-4
+              text-xl
+              font-semibold
+              text-white
+              transition
+              hover:bg-[var(--primary-hover)]
+              hover:shadow-lg
+              active:scale-[0.98]
+              disabled:cursor-not-allowed
+              disabled:opacity-50
+            "
+          >
+            <span>
+              Sign in to analyze
+            </span>
+          </button>
 
 
-      <button
-
-        onClick={submit}
-
-        disabled={
-          loading
-        }
-
-
-        className="
-
-          mt-4
-
-          w-full
-
-          rounded-2xl
+          <div
+            className="
+              mt-3
+              text-center
+              text-sm
+              text-[var(--muted)]
+            "
+          >
+            Sign in to run the analysis.
+            New accounts include 3 free analyses.
+          </div>
 
 
-          bg-[var(--primary)]
+          <div
+            className="
+              mt-2
+              text-center
+              text-xs
+              text-[var(--muted)]
+            "
+          >
+            Don&apos;t have an account?{" "}
+            <button
+              type="button"
+              onClick={() =>
+                goToAuth("register")
+              }
+              className="
+                font-medium
+                text-[var(--primary)]
+                hover:underline
+              "
+            >
+              Create one
+            </button>
+          </div>
+        </>
+      ) : (
+        <>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={
+              loading
+              || !currentIdea.trim()
+              || user.free_runs_remaining <= 0
+            }
+            className="
+              mt-4
+              w-full
+              rounded-2xl
+              bg-[var(--primary)]
+              px-6
+              py-4
+              text-xl
+              font-semibold
+              text-white
+              transition
+              hover:bg-[var(--primary-hover)]
+              hover:shadow-lg
+              active:scale-[0.98]
+              disabled:cursor-not-allowed
+              disabled:opacity-50
+            "
+          >
+            {loading
+              ? "Starting analysis..."
+              : user.free_runs_remaining <= 0
+                ? "No free analyses left"
+                : "Analyze Idea"}
+          </button>
 
-          px-6
 
-          py-4
-
-
-          text-xl
-
-          font-semibold
-
-          text-white
-
-
-          transition
-
-
-          hover:bg-[var(--primary-hover)]
-
-
-          hover:shadow-lg
+          <div
+            className="
+              mt-3
+              text-center
+              text-sm
+              text-[var(--muted)]
+            "
+          >
+            {user.free_runs_remaining} free{" "}
+            {user.free_runs_remaining === 1
+              ? "analysis"
+              : "analyses"}{" "}
+            remaining
+          </div>
+        </>
+      )}
 
 
-          active:scale-[0.98]
-
-
-          disabled:cursor-not-allowed
-
-          disabled:opacity-50
-
-        "
-
-      >
-
-        {
-          loading
-            ? "Starting analysis..."
-            : "Analyze Idea"
-        }
-
-
-      </button>
-
-
-
+      {error && (
+        <div
+          role="alert"
+          aria-live="polite"
+          className="
+            mt-4
+            rounded-xl
+            border
+            border-red-500/30
+            bg-red-500/10
+            px-4
+            py-3
+            text-sm
+            text-red-300
+          "
+        >
+          {error}
+        </div>
+      )}
     </div>
-
   );
-
 }

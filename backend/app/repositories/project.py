@@ -12,16 +12,18 @@ class ProjectRepository:
     def __init__(
         self,
         session: AsyncSession,
-    ):
+    ) -> None:
         self.session = session
 
     async def create(
         self,
         *,
+        user_id: uuid.UUID,
         name: str,
         idea: str,
     ) -> Project:
         project = Project(
+            user_id=user_id,
             name=name,
             idea=idea,
         )
@@ -36,38 +38,44 @@ class ProjectRepository:
     async def get_by_id(
         self,
         project_id: uuid.UUID,
+        *,
+        user_id: uuid.UUID | None = None,
     ) -> Project | None:
-        result = await self.session.execute(
-            select(Project).where(
-                Project.id == project_id,
-            )
+        statement = select(Project).where(
+            Project.id == project_id,
         )
+
+        if user_id is not None:
+            statement = statement.where(
+                Project.user_id == user_id,
+            )
+
+        result = await self.session.execute(statement)
 
         return result.scalar_one_or_none()
-
-    async def get_all(self) -> list[Project]:
-        result = await self.session.execute(
-            select(Project).order_by(
-                Project.created_at.desc(),
-            )
-        )
-
-        return list(result.scalars().all())
 
     async def get_page(
         self,
         *,
+        user_id: uuid.UUID,
         page: int,
         page_size: int,
     ) -> tuple[list[Project], int]:
         offset = (page - 1) * page_size
 
-        total_result = await self.session.execute(select(func.count(Project.id)))
+        total_result = await self.session.execute(
+            select(func.count(Project.id)).where(
+                Project.user_id == user_id,
+            )
+        )
 
         total = total_result.scalar_one()
 
         result = await self.session.execute(
             select(Project)
+            .where(
+                Project.user_id == user_id,
+            )
             .order_by(
                 Project.created_at.desc(),
             )
