@@ -11,9 +11,11 @@ from app.api.errors import (
     validation_error_handler,
 )
 from app.api.router import api_router
+from app.core.config import get_settings
 from app.core.exceptions import AppError
 from app.db.session import AsyncSessionLocal
 
+settings = get_settings()
 app = FastAPI(
     title="AI Venture Lab API",
     version="0.1.0",
@@ -22,7 +24,9 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "http://localhost:3000",
+        origin.strip()
+        for origin in settings.cors_origins.split(",")
+        if origin.strip()
     ],
     allow_credentials=True,
     allow_methods=["*"],

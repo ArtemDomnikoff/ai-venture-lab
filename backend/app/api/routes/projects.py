@@ -5,8 +5,9 @@ import uuid
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_session
+from app.api.deps import get_current_user, get_session
 from app.core.exceptions import ProjectNotFoundError
+from app.models.user import User
 from app.schemas.project import (
     ProjectCreate,
     ProjectListResponse,
@@ -28,11 +29,15 @@ router = APIRouter(
 )
 async def create_project(
     data: ProjectCreate,
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> ProjectResponse:
     service = ProjectService(session)
 
-    return await service.create_project(data)
+    return await service.create_project(
+        data,
+        user_id=current_user.id,
+    )
 
 
 @router.get(
@@ -50,11 +55,13 @@ async def get_projects(
         ge=1,
         le=100,
     ),
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> ProjectListResponse:
     service = ProjectService(session)
 
     projects, total = await service.get_projects(
+        user_id=current_user.id,
         page=page,
         page_size=page_size,
     )
@@ -74,11 +81,15 @@ async def get_projects(
 )
 async def get_project(
     project_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> ProjectResponse:
     service = ProjectService(session)
 
-    project = await service.get_project(project_id)
+    project = await service.get_project(
+        project_id,
+        user_id=current_user.id,
+    )
 
     if project is None:
         raise ProjectNotFoundError(
@@ -96,6 +107,7 @@ async def get_project(
 async def update_project(
     project_id: uuid.UUID,
     data: ProjectUpdate,
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> ProjectResponse:
     service = ProjectService(session)
@@ -103,6 +115,7 @@ async def update_project(
     project = await service.update_project(
         project_id,
         data,
+        user_id=current_user.id,
     )
 
     if project is None:
@@ -119,11 +132,15 @@ async def update_project(
 )
 async def delete_project(
     project_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> None:
     service = ProjectService(session)
 
-    deleted = await service.delete_project(project_id)
+    deleted = await service.delete_project(
+        project_id,
+        user_id=current_user.id,
+    )
 
     if not deleted:
         raise ProjectNotFoundError(

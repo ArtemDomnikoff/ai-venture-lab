@@ -5,7 +5,8 @@ import uuid
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_session
+from app.api.deps import get_current_user, get_session
+from app.models.user import User
 from app.schemas.result import (
     AnalysisResultResponse,
     FindingResponse,
@@ -24,11 +25,15 @@ router = APIRouter(
 )
 async def get_result(
     run_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> AnalysisResultResponse:
     service = ResultService(session)
 
-    return await service.get_result(run_id)
+    return await service.get_result(
+        run_id,
+        user_id=current_user.id,
+    )
 
 
 @router.get(
@@ -37,8 +42,12 @@ async def get_result(
 )
 async def get_findings(
     run_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> list[FindingResponse]:
     service = ResultService(session)
 
-    return await service.get_findings(run_id)
+    return await service.get_findings(
+        run_id,
+        user_id=current_user.id,
+    )

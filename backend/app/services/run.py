@@ -6,6 +6,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import (
+    FreeRunsExhaustedError,
     ProjectNotFoundError,
     RunAlreadyRunningError,
 )
@@ -13,6 +14,7 @@ from app.models.run import Run
 from app.queue.base import Queue
 from app.repositories.project import ProjectRepository
 from app.repositories.run import RunRepository
+from app.repositories.user import UserRepository
 
 
 class RunService:
@@ -24,16 +26,15 @@ class RunService:
         self.session = session
         self.queue = queue
 
-        self.project_repository = ProjectRepository(
-            session,
-        )
-        self.run_repository = RunRepository(
-            session,
-        )
+        self.project_repository = ProjectRepository(session)
+        self.run_repository = RunRepository(session)
+        self.user_repository = UserRepository(session)
 
     async def create_run(
         self,
         project_id: uuid.UUID,
+        *,
+        user_id: uuid.UUID,
     ) -> Run:
         if self.queue is None:
             raise RuntimeError(
@@ -42,6 +43,7 @@ class RunService:
 
         project = await self.project_repository.get_by_id(
             project_id,
+            user_id=user_id,
         )
 
         if project is None:
@@ -57,6 +59,13 @@ class RunService:
             raise RunAlreadyRunningError(
                 str(project_id),
             )
+
+        remaining_runs = await self.user_repository.consume_free_run(
+            user_id,
+        )
+
+        if remaining_runs is None:
+            raise FreeRunsExhaustedError()
 
         try:
             run = await self.run_repository.create(
@@ -81,20 +90,25 @@ class RunService:
     async def get_run(
         self,
         run_id: uuid.UUID,
+        *,
+        user_id: uuid.UUID,
     ) -> Run | None:
         return await self.run_repository.get_by_id(
             run_id,
+            user_id=user_id,
         )
 
     async def get_project_runs(
         self,
         project_id: uuid.UUID,
         *,
+        user_id: uuid.UUID,
         page: int = 1,
         page_size: int = 20,
     ) -> tuple[list[Run], int]:
         project = await self.project_repository.get_by_id(
             project_id,
+            user_id=user_id,
         )
 
         if project is None:
@@ -111,18 +125,18 @@ class RunService:
     async def delete_run(
         self,
         run_id: uuid.UUID,
+        *,
+        user_id: uuid.UUID,
     ) -> bool:
-
         run = await self.run_repository.get_by_id(
             run_id,
+            user_id=user_id,
         )
 
         if run is None:
             return False
 
-        await self.run_repository.delete(
-            run,
-        )
+        await self.run_repository.delete(run)
 
         await self.session.commit()
 

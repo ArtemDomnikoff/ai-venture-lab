@@ -138,3 +138,55 @@ class ResultNotFoundError(AppError):
                 "run_id": run_id,
             },
         )
+
+
+class UnauthorizedError(AppError):
+    def __init__(self) -> None:
+        super().__init__(
+            code="UNAUTHORIZED",
+            message="Authentication required",
+            status_code=401,
+        )
+
+
+class EmailAlreadyRegisteredError(AppError):
+    def __init__(self) -> None:
+        super().__init__(
+            code="EMAIL_ALREADY_REGISTERED",
+            message="Email is already registered",
+            status_code=409,
+        )
+
+
+class InvalidCredentialsError(AppError):
+    def __init__(self) -> None:
+        super().__init__(
+            code="INVALID_CREDENTIALS",
+            message="Invalid email or password",
+            status_code=401,
+        )
+
+
+class FreeRunsExhaustedError(AppError):
+    def __init__(self) -> None:
+        super().__init__(
+            code="FREE_RUNS_EXHAUSTED",
+            message="No free analyses remaining",
+            status_code=403,
+        )
+
+
+class RateLimitExceededError(AppError):
+    def __init__(
+        self,
+        *,
+        retry_after: int,
+    ) -> None:
+        super().__init__(
+            code="RATE_LIMIT_EXCEEDED",
+            message="Too many requests. Please try again later.",
+            status_code=429,
+            details={
+                "retry_after": retry_after,
+            },
+        )

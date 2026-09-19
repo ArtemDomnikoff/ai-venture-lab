@@ -5,10 +5,17 @@ import uuid
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.api.deps import get_queue, get_session
+from app.api.deps import (
+    get_current_user,
+    get_queue,
+    get_rate_limiter,
+    get_session,
+)
 from app.core.exceptions import RunNotFoundError
+from app.models.user import User
 from app.queue.base import Queue
 from app.schemas.run import RunListResponse, RunResponse
+from app.security.rate_limit import RateLimiter
 from app.services.run import RunService
 
 projects_router = APIRouter(
@@ -29,15 +36,26 @@ runs_router = APIRouter(
 )
 async def create_run(
     project_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
     queue: Queue = Depends(get_queue),
+    rate_limiter: RateLimiter = Depends(get_rate_limiter),
 ) -> RunResponse:
+    await rate_limiter.enforce(
+        key=f"run:user:{current_user.id}",
+        limit=5,
+        window_seconds=60,
+    )
+
     service = RunService(
         session=session,
         queue=queue,
     )
 
-    return await service.create_run(project_id)
+    return await service.create_run(
+        project_id,
+        user_id=current_user.id,
+    )
 
 
 @projects_router.get(
@@ -56,12 +74,14 @@ async def get_project_runs(
         ge=1,
         le=100,
     ),
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> RunListResponse:
     service = RunService(session)
 
     runs, total = await service.get_project_runs(
         project_id,
+        user_id=current_user.id,
         page=page,
         page_size=page_size,
     )
@@ -81,11 +101,15 @@ async def get_project_runs(
 )
 async def get_run(
     run_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> RunResponse:
     service = RunService(session)
 
-    run = await service.get_run(run_id)
+    run = await service.get_run(
+        run_id,
+        user_id=current_user.id,
+    )
 
     if run is None:
         raise RunNotFoundError(
@@ -101,13 +125,14 @@ async def get_run(
 )
 async def delete_run(
     run_id: uuid.UUID,
+    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ) -> None:
-
     service = RunService(session)
 
     deleted = await service.delete_run(
         run_id,
+        user_id=current_user.id,
     )
 
     if not deleted:

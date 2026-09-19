@@ -2,21 +2,21 @@ from __future__ import annotations
 
 import uuid
 from datetime import UTC, datetime
+from types import SimpleNamespace
 
 import pytest
 from httpx import ASGITransport, AsyncClient
 
-from app.api.deps import get_session
+from app.api.deps import (
+    get_current_user,
+    get_session,
+)
 from app.domain.enums import RunStatus
 from app.main import app
 from app.models.run import Run
 
 
 class FakeSession:
-    pass
-
-
-class FakeQueue:
     pass
 
 
@@ -54,10 +54,15 @@ async def test_get_run_returns_progress(
 ) -> None:
     run_id = uuid.uuid4()
     project_id = uuid.uuid4()
+    user_id = uuid.uuid4()
 
     run = make_run(
         run_id=run_id,
         project_id=project_id,
+    )
+
+    fake_user = SimpleNamespace(
+        id=user_id,
     )
 
     class FakeRunService:
@@ -71,8 +76,12 @@ async def test_get_run_returns_progress(
         async def get_run(
             self,
             requested_run_id,
+            *,
+            user_id,
         ):
             assert requested_run_id == run_id
+            assert user_id == user_id
+
             return run
 
     monkeypatch.setattr(
@@ -83,7 +92,16 @@ async def test_get_run_returns_progress(
     async def override_session():
         yield FakeSession()
 
-    app.dependency_overrides[get_session] = override_session
+    async def override_current_user():
+        return fake_user
+
+    app.dependency_overrides[
+        get_session
+    ] = override_session
+
+    app.dependency_overrides[
+        get_current_user
+    ] = override_current_user
 
     try:
         async with AsyncClient(
@@ -124,6 +142,11 @@ async def test_get_missing_run_returns_404(
     monkeypatch,
 ) -> None:
     run_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+
+    fake_user = SimpleNamespace(
+        id=user_id,
+    )
 
     class FakeRunService:
         def __init__(
@@ -136,8 +159,13 @@ async def test_get_missing_run_returns_404(
         async def get_run(
             self,
             requested_run_id,
+            *,
+            user_id,
         ):
             assert requested_run_id == run_id
+            assert user_id == fake_user.id
+
+            return None
 
     monkeypatch.setattr(
         "app.api.routes.runs.RunService",
@@ -147,7 +175,16 @@ async def test_get_missing_run_returns_404(
     async def override_session():
         yield FakeSession()
 
-    app.dependency_overrides[get_session] = override_session
+    async def override_current_user():
+        return fake_user
+
+    app.dependency_overrides[
+        get_session
+    ] = override_session
+
+    app.dependency_overrides[
+        get_current_user
+    ] = override_current_user
 
     try:
         async with AsyncClient(
@@ -162,8 +199,14 @@ async def test_get_missing_run_returns_404(
 
         body = response.json()
 
-        assert body["error"]["code"] == "RUN_NOT_FOUND"
-        assert body["error"]["message"] == "Run not found"
+        assert body["error"]["code"] == (
+            "RUN_NOT_FOUND"
+        )
+
+        assert body["error"]["message"] == (
+            "Run not found"
+        )
+
         assert "details" in body["error"]
 
     finally:
