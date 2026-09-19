@@ -47,6 +47,9 @@ export default function RunPageClient({
     loading: authLoading,
   } = useAuth();
 
+  const userId =
+      user?.id;
+
   const [run, setRun] =
     useState<Run | null>(null);
 
@@ -62,7 +65,7 @@ export default function RunPageClient({
       return;
     }
 
-    if (!user) {
+    if (!userId) {
       router.replace(
         `/login?next=/projects/${projectId}/runs/${runId}`,
       );
@@ -123,7 +126,7 @@ export default function RunPageClient({
     projectId,
     router,
     runId,
-    user?.id,
+    userId,
   ]);
 
 

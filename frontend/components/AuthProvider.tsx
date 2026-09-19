@@ -97,8 +97,49 @@ export default function AuthProvider({
 
 
   useEffect(() => {
-    void refreshUser();
-  }, [refreshUser]);
+    let cancelled = false;
+
+    async function initializeAuth() {
+      try {
+        const nextUser =
+          await getCurrentUser();
+
+        if (cancelled) {
+          return;
+        }
+
+        setUser(nextUser);
+      } catch (error) {
+        if (cancelled) {
+          return;
+        }
+
+        if (
+          error instanceof ApiError
+          && error.status === 401
+        ) {
+          setUser(null);
+
+          return;
+        }
+
+        console.error(
+          "Failed to load current user",
+          error,
+        );
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void initializeAuth();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
 
   const loginUser = useCallback(

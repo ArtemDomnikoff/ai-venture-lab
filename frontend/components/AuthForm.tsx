@@ -372,7 +372,7 @@ export default function AuthForm({
         {isLogin
           ? (
             <>
-              Don't have an account?{" "}
+              Don&apos;t have an account?{" "}
               <Link
                 href={
                   redirectPath === "/"

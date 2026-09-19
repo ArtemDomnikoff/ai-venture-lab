@@ -2,8 +2,9 @@
 
 import {
   useEffect,
-  useRef,
   useState,
+  useSyncExternalStore,
+  useRef,
 } from "react";
 
 import {
@@ -28,6 +29,53 @@ const IDEA_DRAFT_KEY =
   "venture-lab:idea-draft";
 
 
+function subscribeToIdeaDraft(
+  callback: () => void,
+): () => void {
+  if (
+    typeof window === "undefined"
+  ) {
+    return () => {};
+  }
+
+  window.addEventListener(
+    "storage",
+    callback,
+  );
+
+  return () => {
+    window.removeEventListener(
+      "storage",
+      callback,
+    );
+  };
+}
+
+
+function getIdeaDraftSnapshot(): string {
+  if (
+    typeof window === "undefined"
+  ) {
+    return "";
+  }
+
+  try {
+    return (
+      window.sessionStorage.getItem(
+        IDEA_DRAFT_KEY,
+      ) ?? ""
+    );
+  } catch {
+    return "";
+  }
+}
+
+
+function getIdeaDraftServerSnapshot(): string {
+  return "";
+}
+
+
 export default function IdeaForm() {
   const router = useRouter();
 
@@ -37,33 +85,40 @@ export default function IdeaForm() {
     refreshUser,
   } = useAuth();
 
-  const [idea, setIdea] =
-    useState("");
+  const storedDraft =
+    useSyncExternalStore(
+      subscribeToIdeaDraft,
+      getIdeaDraftSnapshot,
+      getIdeaDraftServerSnapshot,
+    );
 
-  const [loading, setLoading] =
-    useState(false);
+  const [
+    idea,
+    setIdea,
+  ] = useState("");
 
-  const [error, setError] =
-    useState<string | null>(null);
+  const [
+    hasEdited,
+    setHasEdited,
+  ] = useState(false);
+
+  const [
+    loading,
+    setLoading,
+  ] = useState(false);
+
+  const [
+    error,
+    setError,
+  ] = useState<string | null>(null);
 
   const textareaRef =
     useRef<HTMLTextAreaElement>(null);
 
-
-  useEffect(() => {
-    try {
-      const draft =
-        window.sessionStorage.getItem(
-          IDEA_DRAFT_KEY,
-        );
-
-      if (draft) {
-        setIdea(draft);
-      }
-    } catch {
-      // Session storage may be unavailable.
-    }
-  }, []);
+  const currentIdea =
+    hasEdited
+      ? idea
+      : storedDraft;
 
 
   useEffect(() => {
@@ -93,18 +148,27 @@ export default function IdeaForm() {
       textarea.style.overflowY =
         "auto";
     }
-  }, [idea]);
+  }, [currentIdea]);
+
+
+  function handleIdeaChange(
+    value: string,
+  ) {
+    setHasEdited(true);
+    setIdea(value);
+    setError(null);
+  }
 
 
   function saveDraft() {
-    if (!idea.trim()) {
+    if (!currentIdea.trim()) {
       return;
     }
 
     try {
       window.sessionStorage.setItem(
         IDEA_DRAFT_KEY,
-        idea,
+        currentIdea,
       );
     } catch {
       // Session storage may be unavailable.
@@ -128,9 +192,8 @@ export default function IdeaForm() {
   ) {
     saveDraft();
 
-    const nextPath = encodeURIComponent(
-      "/",
-    );
+    const nextPath =
+      encodeURIComponent("/");
 
     router.push(
       `/${path}?next=${nextPath}`,
@@ -144,7 +207,7 @@ export default function IdeaForm() {
       return;
     }
 
-    if (!idea.trim()) {
+    if (!currentIdea.trim()) {
       return;
     }
 
@@ -165,7 +228,7 @@ export default function IdeaForm() {
       const project =
         await createProject(
           "New Venture Analysis",
-          idea,
+          currentIdea.trim(),
         );
 
       const run =
@@ -184,6 +247,16 @@ export default function IdeaForm() {
       if (
         error instanceof ApiError
       ) {
+        if (
+          error.status === 401
+        ) {
+          router.replace(
+            `/login?next=/`,
+          );
+
+          return;
+        }
+
         if (
           error.code ===
           "FREE_RUNS_EXHAUSTED"
@@ -258,17 +331,13 @@ export default function IdeaForm() {
     >
       <textarea
         ref={textareaRef}
-        value={idea}
+        value={currentIdea}
         onChange={(event) =>
-          setIdea(
+          handleIdeaChange(
             event.target.value,
           )
         }
-        placeholder={
-          user
-            ? "Describe your startup idea..."
-            : "Describe your startup idea..."
-        }
+        placeholder="Describe your startup idea..."
         rows={1}
         disabled={
           loading
@@ -310,11 +379,9 @@ export default function IdeaForm() {
         <>
           <button
             type="button"
-            onClick={() =>
-              submit()
-            }
+            onClick={submit}
             disabled={
-              !idea.trim()
+              !currentIdea.trim()
               || loading
             }
             className="
@@ -344,6 +411,7 @@ export default function IdeaForm() {
             </span>
           </button>
 
+
           <div
             className="
               mt-3
@@ -356,6 +424,7 @@ export default function IdeaForm() {
             New accounts include 3 free analyses.
           </div>
 
+
           <div
             className="
               mt-2
@@ -364,7 +433,7 @@ export default function IdeaForm() {
               text-[var(--muted)]
             "
           >
-            Don't have an account?{" "}
+            Don&apos;t have an account?{" "}
             <button
               type="button"
               onClick={() =>
@@ -387,7 +456,7 @@ export default function IdeaForm() {
             onClick={submit}
             disabled={
               loading
-              || !idea.trim()
+              || !currentIdea.trim()
               || user.free_runs_remaining <= 0
             }
             className="
@@ -414,6 +483,7 @@ export default function IdeaForm() {
                 ? "No free analyses left"
                 : "Analyze Idea"}
           </button>
+
 
           <div
             className="

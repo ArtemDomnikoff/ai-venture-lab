@@ -47,6 +47,9 @@ export default function ProjectPageClient({
     loading: authLoading,
   } = useAuth();
 
+  const userId =
+  user?.id;
+
   const [project, setProject] =
     useState<Project | null>(null);
 
@@ -65,7 +68,7 @@ export default function ProjectPageClient({
       return;
     }
 
-    if (!user) {
+    if (!userId) {
       router.replace(
         `/login?next=/projects/${projectId}`,
       );
@@ -143,7 +146,7 @@ export default function ProjectPageClient({
     authLoading,
     projectId,
     router,
-    user?.id,
+    userId,
   ]);
 
 

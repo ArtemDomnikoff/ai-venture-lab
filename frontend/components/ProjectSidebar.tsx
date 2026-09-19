@@ -72,6 +72,9 @@ export default function ProjectSidebar() {
     logoutUser,
   } = useAuth();
 
+  const userId =
+  user?.id;
+
   const [
     open,
     setOpen,
@@ -113,9 +116,7 @@ export default function ProjectSidebar() {
       return;
     }
 
-    if (!user) {
-      setProjects([]);
-      setLoading(false);
+    if (!userId) {
       return;
     }
 
@@ -178,7 +179,7 @@ export default function ProjectSidebar() {
     };
   }, [
     authLoading,
-    user?.id,
+    userId,
   ]);
 
 
