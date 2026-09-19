@@ -110,6 +110,7 @@ export default function RunViewer({
             && error.status === 401
           ) {
             redirectToLogin();
+
             return;
           }
 
@@ -146,8 +147,6 @@ export default function RunViewer({
         );
 
       return () => {
-        cancelled = true;
-
         window.clearTimeout(
           timeout,
         );
@@ -191,6 +190,7 @@ export default function RunViewer({
               && error.status === 401
             ) {
               redirectToLogin();
+
               return;
             }
 

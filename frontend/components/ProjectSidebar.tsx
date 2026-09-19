@@ -188,14 +188,7 @@ export default function ProjectSidebar() {
 
     if (open) {
       setExpanded(false);
-
-      window.setTimeout(
-        () => {
-          setOpen(false);
-        },
-        300,
-      );
-
+      setOpen(false);
       return;
     }
 
@@ -317,7 +310,7 @@ export default function ProjectSidebar() {
         border-[var(--border)]
         bg-[var(--card)]
         transition-[width]
-        duration-300
+        duration-150
         ease-in-out
 
         ${
