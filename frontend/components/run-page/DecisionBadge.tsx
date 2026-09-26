@@ -24,25 +24,25 @@ const decisionConfig: Record<
 
 
   promising_but_risky: {
-    label: "Promising but Risky",
-    color: "var(--warning)",
+    label: "Promising but risky",
+    color: "var(--good)",
   },
 
 
   needs_more_research: {
-    label: "Needs More Research",
-    color: "var(--primary)",
+    label: "Needs more research",
+    color: "var(--caution)",
   },
 
 
   weak_opportunity: {
-    label: "Weak Opportunity",
+    label: "Weak opportunity",
     color: "var(--warning)",
   },
 
 
   not_recommended: {
-    label: "Not Recommended",
+    label: "Not recommended",
     color: "var(--danger)",
   },
 

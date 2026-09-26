@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+    useRef,
   useState,
 } from "react";
 
@@ -62,6 +63,15 @@ function getAvatarLetter(
 }
 
 
+function isRunPath(
+  pathname: string,
+): boolean {
+  return /^\/projects\/[^/]+\/runs\/[^/]+/.test(
+    pathname,
+  );
+}
+
+
 export default function ProjectSidebar() {
   const pathname = usePathname();
   const router = useRouter();
@@ -73,7 +83,7 @@ export default function ProjectSidebar() {
   } = useAuth();
 
   const userId =
-  user?.id;
+    user?.id;
 
   const [
     open,
@@ -110,6 +120,7 @@ export default function ProjectSidebar() {
     setDeletingId,
   ] = useState<string | null>(null);
 
+    const hasLoadedOnceRef = useRef(false);
 
   useEffect(() => {
     if (authLoading) {
@@ -122,8 +133,12 @@ export default function ProjectSidebar() {
 
     let cancelled = false;
 
-    async function loadProjects() {
-      setLoading(true);
+    async function loadProjects(
+      showLoading = false,
+    ) {
+      if (showLoading) {
+        setLoading(true);
+      }
 
       try {
         const response =
@@ -156,6 +171,7 @@ export default function ProjectSidebar() {
           && error.status === 401
         ) {
           setProjects([]);
+
           return;
         }
 
@@ -163,23 +179,48 @@ export default function ProjectSidebar() {
           "Failed to load projects",
           error,
         );
-
-        setProjects([]);
       } finally {
-        if (!cancelled) {
+        if (
+          showLoading
+          && !cancelled
+        ) {
           setLoading(false);
         }
+        hasLoadedOnceRef.current = true;
       }
     }
 
-    void loadProjects();
+    void loadProjects(
+      !hasLoadedOnceRef.current,
+    );
+
+    if (!isRunPath(pathname)) {
+      return () => {
+        cancelled = true;
+      };
+    }
+
+
+    const interval =
+      window.setInterval(
+        () => {
+          void loadProjects(false);
+        },
+        3000,
+      );
+
 
     return () => {
       cancelled = true;
+
+      window.clearInterval(
+        interval,
+      );
     };
   }, [
     authLoading,
     userId,
+    pathname,
   ]);
 
 
@@ -189,6 +230,7 @@ export default function ProjectSidebar() {
     if (open) {
       setExpanded(false);
       setOpen(false);
+
       return;
     }
 
@@ -270,9 +312,10 @@ export default function ProjectSidebar() {
     }
   }
 
+  const visibleProjects = userId ? projects : [];
 
   const filteredProjects =
-    projects.filter(
+    visibleProjects.filter(
       project => {
         const value =
           search
@@ -308,7 +351,7 @@ export default function ProjectSidebar() {
         overflow-visible
         border-r
         border-[var(--border)]
-        bg-[var(--card)]
+        bg-card
         transition-[width]
         duration-150
         ease-in-out
@@ -329,7 +372,7 @@ export default function ProjectSidebar() {
           items-center
           overflow-hidden
           border-b
-          border-[var(--border)]
+          border-border
         "
       >
         <button
@@ -432,12 +475,12 @@ export default function ProjectSidebar() {
                     items-center
                     overflow-hidden
                     rounded-xl
-                    bg-[var(--primary)]
+                    bg-primary
                     text-sm
                     font-semibold
                     text-white
                     transition
-                    hover:opacity-90
+                    hover:bg-primary-hover
                   "
                 >
                   <span
@@ -608,7 +651,8 @@ export default function ProjectSidebar() {
                             className="
                               absolute
                               right-2
-                              top-2
+                              top-1/2
+                              -translate-y-1/2
                               flex
                               h-6
                               w-6
@@ -952,11 +996,11 @@ export default function ProjectSidebar() {
               rounded-xl
               border
               border-[var(--border)]
-              bg-[var(--background)]
-              text-sm
+              bg-[var(--primary)]
+              text-md
               font-medium
               transition
-              hover:bg-[var(--card)]
+              hover:bg-[var(--primary-hover)]
             "
           >
             <span

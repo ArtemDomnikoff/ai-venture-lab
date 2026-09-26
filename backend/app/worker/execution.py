@@ -1,14 +1,20 @@
 from __future__ import annotations
 
+import logging
 import uuid
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.graph.graph import build_graph
+from app.graph.naming import generate_project_name
 from app.observability import analysis_trace
+from app.repositories.project import ProjectRepository
 from app.repositories.run import RunRepository
 
-NODE_NAMES = (
+logger = logging.getLogger(__name__)
+
+
+GRAPH_NODE_NAMES = (
     "planner",
     "researcher",
     "customer",
@@ -27,6 +33,8 @@ PARALLEL_NODES = {
     "business",
 }
 
+NAMING_NODE = "naming"
+
 
 async def run_analysis(
     session: AsyncSession,
@@ -34,8 +42,10 @@ async def run_analysis(
     project_id: uuid.UUID,
     idea: str,
 ) -> dict:
-
     repository = RunRepository(
+        session,
+    )
+    project_repository = ProjectRepository(
         session,
     )
 
@@ -48,7 +58,11 @@ async def run_analysis(
             f"Run {run_id} not found",
         )
 
-    progress = {node: "waiting" for node in NODE_NAMES}
+    progress = {
+        node: "waiting"
+        for node in GRAPH_NODE_NAMES
+    }
+    progress[NAMING_NODE] = "waiting"
 
     await repository.update_progress(
         run,
@@ -91,7 +105,7 @@ async def run_analysis(
                 stream_mode="updates",
             ):
                 for node_name, node_update in update.items():
-                    if node_name not in NODE_NAMES:
+                    if node_name not in GRAPH_NODE_NAMES:
                         continue
 
                     if isinstance(
@@ -112,10 +126,15 @@ async def run_analysis(
 
                     elif node_name in PARALLEL_NODES:
                         all_parallel_completed = all(
-                            progress[node] == "completed" for node in PARALLEL_NODES
+                            progress[node] == "completed"
+                            for node in PARALLEL_NODES
                         )
 
-                        current_node = "skeptic" if all_parallel_completed else None
+                        current_node = (
+                            "skeptic"
+                            if all_parallel_completed
+                            else None
+                        )
 
                         if all_parallel_completed:
                             progress["skeptic"] = "running"
@@ -151,6 +170,8 @@ async def run_analysis(
                 if progress[node_name] == "running":
                     progress[node_name] = "failed"
 
+            progress[NAMING_NODE] = "waiting"
+
             await repository.update_progress(
                 run,
                 progress=progress,
@@ -169,8 +190,81 @@ async def run_analysis(
 
             raise
 
+        #
+        # Main analysis pipeline is finished here.
+        #
+        # judge is complete, all research is complete,
+        # and only now do we run the small project-naming pipeline.
+        #
+
+        progress = {
+            node: "completed"
+            for node in GRAPH_NODE_NAMES
+        }
+        progress[NAMING_NODE] = "running"
+
+        await repository.update_progress(
+            run,
+            progress=progress,
+            current_node=NAMING_NODE,
+        )
+
+        await session.commit()
+
+        generated_project_name: str | None = None
+        naming_failed = False
+
+        try:
+            generated_project_name = await generate_project_name(
+                idea=state["idea"],
+                judge=state["judge"],
+            )
+
+            project = await project_repository.get_by_id(
+                project_id,
+            )
+
+            if project is not None:
+                await project_repository.update(
+                    project,
+                    name=generated_project_name,
+                )
+
+                await session.commit()
+
+            progress[NAMING_NODE] = "completed"
+
+        except Exception:
+            naming_failed = True
+            progress[NAMING_NODE] = "failed"
+
+            logger.exception(
+                "Project name generation failed",
+                extra={
+                    "event": "project.naming_failed",
+                    "run_id": str(run_id),
+                    "project_id": str(project_id),
+                },
+            )
+
+            await session.rollback()
+
+            #
+            # The main analysis must remain successful even when the
+            # optional naming step fails.
+            #
+            run = await repository.get_by_id(
+                run_id,
+            )
+
+            if run is None:
+                raise RuntimeError(
+                    f"Run {run_id} disappeared during naming.",
+                ) from None
+
         output = {
             "idea": state["idea"],
+            "project_name": generated_project_name,
             "plan": state["plan"].model_dump(),
             "researcher": state["researcher"].model_dump(),
             "customer": state["customer"].model_dump(),
@@ -180,8 +274,6 @@ async def run_analysis(
             "skeptic": state["skeptic"].model_dump(),
             "judge": state["judge"].model_dump(),
         }
-
-        progress = {node: "completed" for node in NODE_NAMES}
 
         await repository.update_progress(
             run,
@@ -197,6 +289,8 @@ async def run_analysis(
                     "status": "completed",
                     "score": output["judge"]["score"],
                     "decision": output["judge"]["decision"],
+                    "project_name": generated_project_name,
+                    "naming_failed": naming_failed,
                     "progress": progress,
                 }
             )

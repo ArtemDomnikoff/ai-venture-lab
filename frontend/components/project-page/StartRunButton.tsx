@@ -166,13 +166,13 @@ export default function StartRunButton({
         className="
           inline-flex
           rounded-xl
-          bg-[var(--primary)]
+          bg-primary
           px-5
           py-3
           font-semibold
           text-white
           transition
-          hover:bg-[var(--primary-hover)]
+          hover:bg-primary-hover
           disabled:cursor-not-allowed
           disabled:opacity-50
         "

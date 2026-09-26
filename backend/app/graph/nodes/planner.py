@@ -6,9 +6,9 @@ from app.llm.runner import generate_structured
 from app.observability import agent_trace
 
 SYSTEM_PROMPT = """
-You are the Planner node in a multi-agent startup evaluation system.
+You are the Planner node in a multi-agent startup research system.
 
-Your job is to create a research plan for five independent analytical tracks:
+Create an investigation plan for five independent research tracks:
 
 1. Market
 2. Customer
@@ -16,35 +16,36 @@ Your job is to create a research plan for five independent analytical tracks:
 4. Technology
 5. Business
 
-The five analytical agents must work independently.
-Do not create dependencies between these tracks.
+For every track produce:
+- 3-6 concrete research questions;
+- 4-5 targeted web-search queries;
+- one concise research focus.
 
-For each track, produce:
-- focused research questions;
-- a concise research focus.
+Search queries are not generic topic labels. Each query must be designed to
+retrieve specific evidence needed to answer one or more research questions.
 
-The final plan must contain separate question lists for:
-- market_questions
-- customer_questions
-- competition_questions
-- tech_questions
-- business_questions
+Good queries usually include:
+- the exact problem/category;
+- a measurable fact;
+- a relevant buyer or segment;
+- a competitor/company;
+- a pricing or adoption term;
+- a technical mechanism;
+- a time period or geography when those are explicitly relevant.
 
-The plan must also contain:
-- market_focus
-- customer_focus
-- competition_focus
-- tech_focus
-- business_focus
+Do not invent geography, customer segments, competitors, prices, or market facts.
+Only use geography or specificity that can be reasonably derived from the idea.
+When specificity is unknown, formulate a query that discovers it.
 
-Do not perform the actual research.
-Do not invent facts about the startup or its market.
-
+For each track include both questions and search queries.
+Do not perform research.
 Return only the structured research plan.
 """.strip()
 
 
-async def planner_node(state: AnalysisState) -> dict:
+async def planner_node(
+    state: AnalysisState,
+) -> dict:
     idea = state["idea"]
 
     user_prompt = f"""
@@ -52,17 +53,27 @@ Startup idea:
 
 {idea}
 
-Create an independent research plan for the five analytical tracks:
-market, customer, competition, technology, and business.
+Create the research plan.
 
-Make the research questions concrete enough for specialized agents
-to investigate them independently.
+The questions must describe what we need to know.
+The search queries must describe what we should actually search for.
+Avoid generic queries such as "market trends" or "startup opportunity".
 """.strip()
 
     with agent_trace(
         agent_name="planner",
-        run_id=str(state.get("run_id", "")),
-        project_id=str(state.get("project_id", "")),
+        run_id=str(
+            state.get(
+                "run_id",
+                "",
+            )
+        ),
+        project_id=str(
+            state.get(
+                "project_id",
+                "",
+            )
+        ),
         idea=idea,
     ) as observation:
         result = await generate_structured(
@@ -74,11 +85,36 @@ to investigate them independently.
         if observation is not None:
             observation.update(
                 output={
-                    "market_questions": len(result.market_questions),
-                    "customer_questions": len(result.customer_questions),
-                    "competition_questions": len(result.competition_questions),
-                    "tech_questions": len(result.tech_questions),
-                    "business_questions": len(result.business_questions),
+                    "market_questions": len(
+                        result.market_questions,
+                    ),
+                    "market_queries": len(
+                        result.market_queries,
+                    ),
+                    "customer_questions": len(
+                        result.customer_questions,
+                    ),
+                    "customer_queries": len(
+                        result.customer_queries,
+                    ),
+                    "competition_questions": len(
+                        result.competition_questions,
+                    ),
+                    "competition_queries": len(
+                        result.competition_queries,
+                    ),
+                    "tech_questions": len(
+                        result.tech_questions,
+                    ),
+                    "tech_queries": len(
+                        result.tech_queries,
+                    ),
+                    "business_questions": len(
+                        result.business_questions,
+                    ),
+                    "business_queries": len(
+                        result.business_queries,
+                    ),
                 }
             )
 

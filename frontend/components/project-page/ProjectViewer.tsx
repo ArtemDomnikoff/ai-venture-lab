@@ -24,7 +24,7 @@ import type {
 } from "@/types/api";
 
 
-import RunCard from "@/components/RunCard";
+import RunCard from "@/components/project-page/RunCard";
 
 
 

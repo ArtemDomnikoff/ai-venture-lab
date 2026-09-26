@@ -25,9 +25,9 @@ import {
   useAuth,
 } from "@/components/AuthProvider";
 
-import ProjectHeader from "@/components/ProjectHeader";
-import StartRunButton from "@/components/StartRunButton";
-import RunList from "@/components/RunList";
+import ProjectHeader from "@/components/project-page/ProjectHeader";
+import StartRunButton from "@/components/project-page/StartRunButton";
+import RunList from "@/components/project-page/RunList";
 
 import type {
   Project,
@@ -221,8 +221,8 @@ export default function ProjectPageClient({
           className="
             rounded-2xl
             border
-            border-[var(--border)]
-            bg-[var(--card)]
+            border-border
+            bg-card
             p-6
           "
         >

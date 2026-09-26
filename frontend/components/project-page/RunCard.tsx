@@ -22,8 +22,9 @@ import type {
 } from "@/types/api";
 
 
-import StatusBadge from "@/components/StatusBadge";
-import DecisionBadge from "@/components/DecisionBadge";
+import StatusBadge from "@/components/project-page/StatusBadge";
+import DecisionBadge from "@/components/run-page/DecisionBadge";
+import {formatRunError} from "@/components/run-page/viewer/utils";
 
 
 
@@ -450,9 +451,9 @@ export default function RunCard(
                 "
               >
 
-                {
-                  run.error
-                }
+                {formatRunError(
+                    run.error,
+                )}
 
               </p>
 

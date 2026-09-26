@@ -60,11 +60,11 @@ class RunService:
                 str(project_id),
             )
 
-        remaining_runs = await self.user_repository.consume_free_run(
+        has_free_run = await self.user_repository.has_free_run(
             user_id,
         )
 
-        if remaining_runs is None:
+        if not has_free_run:
             raise FreeRunsExhaustedError()
 
         try:

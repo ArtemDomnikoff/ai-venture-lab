@@ -1,5 +1,5 @@
-import HomeHeader from "@/components/HomeHeader";
-import IdeaForm from "@/components/IdeaForm";
+import HomeHeader from "@/components/main-page/HomeHeader";
+import IdeaForm from "@/components/main-page/IdeaForm";
 
 
 export default function Home() {

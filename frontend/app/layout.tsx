@@ -34,8 +34,8 @@ export default function RootLayout({
         className="
           h-screen
           overflow-hidden
-          bg-zinc-950
-          text-zinc-100
+          bg-background
+          text-foreground
         "
       >
         <AuthProvider>

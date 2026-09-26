@@ -18,6 +18,7 @@ from app.infra.redis import create_redis_client
 from app.logging_config import configure_logging
 from app.queue.redis import RedisQueue
 from app.repositories.run import RunRepository
+from app.repositories.user import UserRepository
 from app.worker.execution import run_analysis
 
 logger = logging.getLogger(__name__)
@@ -36,6 +37,26 @@ def parse_run_id(
 
     return uuid.UUID(raw_run_id)
 
+
+async def _fail_run(
+    repository: RunRepository,
+    run,
+    session: AsyncSession,
+    message: str,
+) -> None:
+    run.error = message
+    run.finished_at = datetime.now(UTC)
+
+    await repository.update_status(run, RunStatus.FAILED)
+    await session.commit()
+
+    logger.error(
+        "Run failed",
+        extra={
+            "event": "run.failed",
+            "error": message,
+        },
+    )
 
 async def process_run(
     session: AsyncSession,
@@ -97,6 +118,23 @@ async def process_run(
             run.project.idea,
         )
 
+        user_repository = UserRepository(
+            session,
+        )
+
+        consumed = await user_repository.consume_free_run(
+            run.project.user_id,
+        )
+
+        if consumed is None:
+            await _fail_run(
+                repository,
+                run,
+                session,
+                "Free run became unavailable before analysis completed",
+            )
+            return
+
         run.result = result
         run.finished_at = datetime.now(UTC)
 
@@ -115,16 +153,7 @@ async def process_run(
         )
 
     except Exception as exc:
-        run.error = str(exc)
-        run.finished_at = datetime.now(UTC)
-
-        await repository.update_status(
-            run,
-            RunStatus.FAILED,
-        )
-
-        await session.commit()
-
+        await _fail_run(repository, run, session, str(exc))
         logger.exception(
             "Run failed",
             extra={

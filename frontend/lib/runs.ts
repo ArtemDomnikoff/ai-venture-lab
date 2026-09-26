@@ -1,56 +1,33 @@
-import {
-  apiFetch,
-} from "./api";
+import { apiFetch } from "./api";
 
 import type {
-  Run,
   AnalysisResult,
+  DetailedAnalysisResult,
   Finding,
+  Run,
   RunListResponse,
 } from "@/types/api";
 
-
-export function getRun(
-  runId: string,
-) {
-  return apiFetch<Run>(
-    `/runs/${runId}`,
-  );
+export function getRun(runId: string) {
+  return apiFetch<Run>(`/runs/${runId}`);
 }
 
-
-export function getRunResult(
-  runId: string,
-) {
-  return apiFetch<AnalysisResult>(
-    `/runs/${runId}/result`,
-  );
+export function getRunResult(runId: string) {
+  return apiFetch<AnalysisResult>(`/runs/${runId}/result`);
 }
 
-
-export function getRunFindings(
-  runId: string,
-) {
-  return apiFetch<Finding[]>(
-    `/runs/${runId}/findings`,
-  );
+export function getRunDetailedResult(runId: string) {
+  return apiFetch<DetailedAnalysisResult>(`/runs/${runId}/result/detail`);
 }
 
-export function getProjectRuns(
-  projectId:string,
-) {
-  return apiFetch<RunListResponse>(
-    `/projects/${projectId}/runs`,
-  );
+export function getRunFindings(runId: string) {
+  return apiFetch<Finding[]>(`/runs/${runId}/findings`);
 }
 
-export function deleteRun(
-  runId: string,
-) {
-  return apiFetch<void>(
-    `/runs/${runId}`,
-    {
-      method: "DELETE",
-    },
-  );
+export function getProjectRuns(projectId: string) {
+  return apiFetch<RunListResponse>(`/projects/${projectId}/runs`);
+}
+
+export function deleteRun(runId: string) {
+  return apiFetch<void>(`/runs/${runId}`, { method: "DELETE" });
 }

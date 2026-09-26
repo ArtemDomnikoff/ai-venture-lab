@@ -31,14 +31,18 @@ class TavilySearchProvider:
                 "query": query,
                 "max_results": max_results,
                 "search_depth": "advanced",
+                "include_raw_content": True,
             },
         ) as observation:
             response = await self.client.search(
                 query=query,
                 search_depth="advanced",
+                chunks_per_source=3,
                 max_results=max_results,
                 include_answer=False,
-                include_raw_content=False,
+                include_raw_content=True,
+                include_published_date=True,
+                safe_search=False,
             )
 
             results: list[SearchResult] = []
@@ -62,12 +66,11 @@ class TavilySearchProvider:
                     "",
                 )
 
-                score = item.get(
-                    "score",
-                    0.0,
-                )
-
-                if not title or not url or not content:
+                if (
+                    not title
+                    or not url
+                    or not content
+                ):
                     continue
 
                 results.append(
@@ -76,17 +79,38 @@ class TavilySearchProvider:
                         url=url,
                         snippet=content,
                         source=url,
-                        score=float(score),
+                        score=float(
+                            item.get(
+                                "score",
+                                0.0,
+                            )
+                        ),
+                        query=query,
+                        raw_content=item.get(
+                            "raw_content",
+                        ),
+                        published_date=item.get(
+                            "published_date",
+                        ),
                     )
                 )
 
             if observation is not None:
                 observation.update(
                     output={
-                        "result_count": len(results),
-                        "urls": [result.url for result in results],
+                        "result_count": len(
+                            results,
+                        ),
+                        "urls": [
+                            result.url
+                            for result in results
+                        ],
                         "duration_ms": round(
-                            (time.perf_counter() - started_at) * 1000,
+                            (
+                                time.perf_counter()
+                                - started_at
+                            )
+                            * 1000,
                             2,
                         ),
                     }

@@ -6,7 +6,7 @@ import {
 } from "react";
 
 
-import RunCard from "@/components/RunCard";
+import RunCard from "@/components/project-page/RunCard";
 
 
 import type {
@@ -89,7 +89,7 @@ export default function RunList(
           border
           p-8
           text-center
-          text-[var(--muted)]
+          text-muted
         "
       >
 

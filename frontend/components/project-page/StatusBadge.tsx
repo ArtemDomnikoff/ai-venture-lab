@@ -42,7 +42,6 @@ const statusConfig: Record<
     background:
       "color-mix(in srgb, var(--danger) 12%, transparent)",
   },
-
 };
 
 

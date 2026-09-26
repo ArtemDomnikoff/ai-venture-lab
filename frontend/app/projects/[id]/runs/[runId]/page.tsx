@@ -1,4 +1,4 @@
-import RunPageClient from "@/components/RunPageClient";
+import RunPageClient from "@/components/run-page/RunPageClient";
 
 
 export default async function RunPage({

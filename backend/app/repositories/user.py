@@ -83,3 +83,26 @@ class UserRepository:
         )
 
         return result.scalar_one_or_none()
+
+
+    async def has_free_run(
+            self,
+            user_id: uuid.UUID,
+    ) -> bool:
+        statement = (
+            select(User.free_runs_remaining)
+            .where(
+                User.id == user_id,
+            )
+        )
+
+        result = await self.session.execute(
+            statement,
+        )
+
+        remaining = result.scalar_one_or_none()
+
+        return (
+                remaining is not None
+                and remaining > 0
+        )

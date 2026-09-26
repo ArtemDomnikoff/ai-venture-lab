@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from typing import Any
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -15,6 +16,7 @@ from app.repositories.run import RunRepository
 from app.schemas.result import (
     AnalysisDecision,
     AnalysisResultResponse,
+    DetailedAnalysisResultResponse,
     FindingCategory,
     FindingResponse,
 )
@@ -38,59 +40,108 @@ class ResultService:
             run_id,
             user_id=user_id,
         )
-
         if run is None:
-            raise RunNotFoundError(
-                str(run_id),
-            )
+            raise RunNotFoundError(str(run_id))
 
         self._ensure_result_available(run)
 
         result = run.result
-
         if not isinstance(result, dict):
-            raise ResultNotFoundError(
-                str(run_id),
-            )
+            raise ResultNotFoundError(str(run_id))
 
         judge = result.get("judge")
-
         if not isinstance(judge, dict):
-            raise ResultNotFoundError(
-                str(run_id),
-            )
+            raise ResultNotFoundError(str(run_id))
 
         raw_score = judge.get("score")
         raw_decision = judge.get("decision")
 
         if not isinstance(raw_score, int):
-            raise ResultNotFoundError(
-                str(run_id),
-            )
-
+            raise ResultNotFoundError(str(run_id))
         if not isinstance(raw_decision, str):
-            raise ResultNotFoundError(
-                str(run_id),
-            )
+            raise ResultNotFoundError(str(run_id))
 
         try:
             decision = AnalysisDecision(raw_decision)
         except ValueError as exc:
-            raise ResultNotFoundError(
-                str(run_id),
-            ) from exc
+            raise ResultNotFoundError(str(run_id)) from exc
 
         summary = self._build_summary(
             result=result,
             judge=judge,
         )
-
         return AnalysisResultResponse(
             run_id=run.id,
             score=raw_score,
             decision=decision,
             summary=summary,
             created_at=run.finished_at or run.created_at,
+        )
+
+    async def get_detailed_result(
+        self,
+        run_id: uuid.UUID,
+        *,
+        user_id: uuid.UUID,
+    ) -> DetailedAnalysisResultResponse:
+        run = await self.repository.get_by_id(
+            run_id,
+            user_id=user_id,
+        )
+        if run is None:
+            raise RunNotFoundError(str(run_id))
+
+        self._ensure_result_available(run)
+
+        result = run.result
+        if not isinstance(result, dict):
+            raise ResultNotFoundError(str(run_id))
+
+        judge = result.get("judge")
+        if not isinstance(judge, dict):
+            raise ResultNotFoundError(str(run_id))
+
+        raw_score = judge.get("score")
+        raw_decision = judge.get("decision")
+        if not isinstance(raw_score, int) or not isinstance(raw_decision, str):
+            raise ResultNotFoundError(str(run_id))
+
+        try:
+            decision = AnalysisDecision(raw_decision)
+        except ValueError as exc:
+            raise ResultNotFoundError(str(run_id)) from exc
+
+        agents: dict[str, dict[str, Any]] = {}
+        for agent_name in (
+            "researcher",
+            "customer",
+            "competitor",
+            "tech",
+            "business",
+        ):
+            agent_result = result.get(agent_name)
+            if isinstance(agent_result, dict):
+                agents[agent_name] = agent_result
+
+        skeptic = result.get("skeptic")
+        skeptic_value = skeptic if isinstance(skeptic, dict) else None
+
+        plan = result.get("plan")
+        plan_value = plan if isinstance(plan, dict) else None
+
+        return DetailedAnalysisResultResponse(
+            run_id=run.id,
+            score=raw_score,
+            decision=decision,
+            summary=self._build_summary(
+                result=result,
+                judge=judge,
+            ),
+            created_at=run.finished_at or run.created_at,
+            judge=judge,
+            skeptic=skeptic_value,
+            agents=agents,
+            plan=plan_value,
         )
 
     async def get_findings(
@@ -103,23 +154,16 @@ class ResultService:
             run_id,
             user_id=user_id,
         )
-
         if run is None:
-            raise RunNotFoundError(
-                str(run_id),
-            )
+            raise RunNotFoundError(str(run_id))
 
         self._ensure_result_available(run)
 
         result = run.result
-
         if not isinstance(result, dict):
-            raise ResultNotFoundError(
-                str(run_id),
-            )
+            raise ResultNotFoundError(str(run_id))
 
         findings: list[FindingResponse] = []
-
         agent_mapping = (
             (
                 "researcher",
@@ -155,12 +199,10 @@ class ResultService:
 
         for agent_name, category, title in agent_mapping:
             agent_result = result.get(agent_name)
-
             if not isinstance(agent_result, dict):
                 continue
 
             summary = agent_result.get("summary")
-
             if not isinstance(summary, str):
                 continue
 
@@ -176,7 +218,6 @@ class ResultService:
                 uuid.NAMESPACE_URL,
                 f"ai-venture-lab:run:{run.id}:finding:{category.value}",
             )
-
             findings.append(
                 FindingResponse(
                     id=finding_id,
@@ -188,9 +229,7 @@ class ResultService:
             )
 
         if not findings:
-            raise ResultNotFoundError(
-                str(run_id),
-            )
+            raise ResultNotFoundError(str(run_id))
 
         return findings
 
@@ -212,9 +251,7 @@ class ResultService:
             )
 
         if run.status is not RunStatus.COMPLETED:
-            raise ResultNotFoundError(
-                str(run.id),
-            )
+            raise ResultNotFoundError(str(run.id))
 
     @staticmethod
     def _build_summary(
@@ -226,7 +263,6 @@ class ResultService:
 
         if isinstance(skeptic, dict):
             skeptic_summary = skeptic.get("summary")
-
             if isinstance(skeptic_summary, str) and skeptic_summary.strip():
                 return skeptic_summary
 
@@ -236,22 +272,15 @@ class ResultService:
         strength_text = ", ".join(
             item for item in strengths if isinstance(item, str)
         )
-
         risk_text = ", ".join(
             item for item in risks if isinstance(item, str)
         )
 
         parts: list[str] = []
-
         if strength_text:
-            parts.append(
-                f"Strengths: {strength_text}",
-            )
-
+            parts.append(f"Strengths: {strength_text}")
         if risk_text:
-            parts.append(
-                f"Risks: {risk_text}",
-            )
+            parts.append(f"Risks: {risk_text}")
 
         if parts:
             return " ".join(parts)

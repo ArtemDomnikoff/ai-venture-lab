@@ -5,17 +5,8 @@ export interface User {
   created_at: string;
 }
 
-export type ProjectStatus =
-  | "draft"
-  | "active"
-  | "archived";
-
-export type RunStatus =
-  | "queued"
-  | "running"
-  | "completed"
-  | "failed"
-  | "cancelled";
+export type ProjectStatus = "draft" | "active" | "archived";
+export type RunStatus = "queued" | "running" | "completed" | "failed" | "cancelled";
 
 export interface Project {
   id: string;
@@ -37,16 +28,11 @@ export interface Run {
   id: string;
   project_id: string;
   status: RunStatus;
-
   progress: Record<string, string>;
-
   current_node: string | null;
-
   started_at: string | null;
   finished_at: string | null;
-
   error: string | null;
-
   created_at: string;
 }
 
@@ -67,27 +53,17 @@ export interface Evidence {
 
 export interface AgentReport {
   summary?: string;
-
   claims?: string[];
-
   evidence?: Evidence[];
-
   risks?: string[];
-
   strengths?: string[];
-
   contradictions?: string[];
-
   missing_evidence?: string[];
-
   unsupported_claims?: string[];
-
   confidence?: number;
-
   score?: number;
-
   decision?: string;
-
+  evidence_quality?: number;
   [key: string]: unknown;
 }
 
@@ -129,4 +105,11 @@ export interface Finding {
   title: string;
   summary: string;
   confidence: number;
+}
+
+export interface DetailedAnalysisResult extends AnalysisResult {
+  judge?: AgentReport;
+  skeptic?: AgentReport;
+  agents?: Record<string, AgentReport>;
+  plan?: Record<string, unknown>;
 }

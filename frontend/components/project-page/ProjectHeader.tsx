@@ -21,30 +21,6 @@ import type {
 } from "@/types/api";
 
 
-function StatusBadge({
-  status,
-}: {
-  status: string;
-}) {
-  return (
-    <span
-      className="
-        inline-flex
-        rounded-full
-        border
-        border-[var(--border)]
-        px-3
-        py-1
-        text-sm
-        font-medium
-      "
-    >
-      {status}
-    </span>
-  );
-}
-
-
 export default function ProjectHeader({
   project,
 }: {
@@ -337,12 +313,6 @@ export default function ProjectHeader({
           </div>
         </div>
 
-
-        <StatusBadge
-          status={
-            project.status
-          }
-        />
       </div>
     </section>
   );

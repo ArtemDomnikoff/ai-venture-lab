@@ -35,7 +35,7 @@ export default function HomeHeader() {
           rounded-xl
           px-4
           py-2.5
-          text-sm
+          text-md
           font-medium
           text-[var(--foreground)]
           transition
@@ -52,8 +52,8 @@ export default function HomeHeader() {
           bg-[var(--primary)]
           px-4
           py-2.5
-          text-sm
-          font-semibold
+          text-md
+          font-medium
           text-white
           shadow-sm
           transition
@@ -61,7 +61,7 @@ export default function HomeHeader() {
           hover:shadow-md
         "
       >
-        Sign Up
+        Sign up
       </Link>
     </div>
   );

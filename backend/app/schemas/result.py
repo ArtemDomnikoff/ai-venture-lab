@@ -3,6 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import datetime
 from enum import StrEnum
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -26,35 +27,27 @@ class FindingCategory(StrEnum):
 
 class AnalysisResultResponse(BaseModel):
     run_id: uuid.UUID
-
-    score: int = Field(
-        ge=0,
-        le=100,
-    )
-
+    score: int = Field(ge=0, le=100)
     decision: AnalysisDecision
-
-    summary: str = Field(
-        min_length=1,
-    )
-
+    summary: str = Field(min_length=1)
     created_at: datetime
 
 
 class FindingResponse(BaseModel):
     id: uuid.UUID
-
     category: FindingCategory
+    title: str = Field(min_length=1)
+    summary: str = Field(min_length=1)
+    confidence: int = Field(ge=0, le=100)
 
-    title: str = Field(
-        min_length=1,
-    )
 
-    summary: str = Field(
-        min_length=1,
-    )
-
-    confidence: int = Field(
-        ge=0,
-        le=100,
-    )
+class DetailedAnalysisResultResponse(BaseModel):
+    run_id: uuid.UUID
+    score: int = Field(ge=0, le=100)
+    decision: AnalysisDecision
+    summary: str = Field(min_length=1)
+    created_at: datetime
+    judge: dict[str, Any] | None = None
+    skeptic: dict[str, Any] | None = None
+    agents: dict[str, dict[str, Any]] = Field(default_factory=dict)
+    plan: dict[str, Any] | None = None

@@ -23,7 +23,7 @@ import {
   useAuth,
 } from "@/components/AuthProvider";
 
-import RunViewer from "@/components/RunViewer";
+import RunViewer from "@/components/run-page/RunViewer";
 
 import type {
   Run,
@@ -206,7 +206,7 @@ export default function RunPageClient({
     <main
       className="
         min-h-screen
-        bg-[var(--background)]
+        bg-background
         px-4
         py-8
         sm:px-8
